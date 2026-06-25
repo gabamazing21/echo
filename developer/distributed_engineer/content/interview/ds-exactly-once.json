@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-eo-myth",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Does your message queue guarantee exactly-once delivery? Explain.",
+    "companies": "Amazon, Stripe, infra interviews",
+    "source_name": "DDIA Ch.11 — Stream Processing",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "Exactly-once *delivery* is impossible over an unreliable network — if the ack is lost, the sender can't tell delivered-once from not-delivered, so it must either risk loss (at-most-once) or risk duplicates (at-least-once); the two-generals problem. Real systems choose **at-least-once** and make processing **idempotent**, giving **effectively-once** (exactly-once *effect*). The senior move is to correct the premise: 'the queue gives at-least-once; *I* make the effect exactly-once with idempotency keys + dedup.'"
+  },
+  {
+    "slug": "iq-eo-idempotency-key",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Design a payment/charge endpoint that's safe to retry (client may resend on timeout) so a customer is never double-charged.",
+    "companies": "Stripe, payments interviews",
+    "source_name": "Stripe — Idempotent Requests",
+    "source_url": "https://stripe.com/docs/api/idempotent_requests",
+    "model_answer": "Client sends a stable **idempotency key** (same across retries of the *same* charge). Server, in one transaction: `INSERT INTO processed(key) ON CONFLICT DO NOTHING`; if the row is new, perform the charge and store the result; if it already existed, it's a retry — return the cached result without charging again. The effect and the dedup record must commit **atomically** (else: charge, crash before recording, retry → double charge). This is exactly how Stripe's `Idempotency-Key` header works."
+  },
+  {
+    "slug": "iq-eo-outbox",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "You update a row AND must publish an event about it. How do you avoid the 'wrote the DB but the publish failed' (or vice-versa) inconsistency?",
+    "companies": "Backend / event-driven interviews",
+    "source_name": "microservices.io — Transactional Outbox",
+    "source_url": "https://microservices.io/patterns/data/transactional-outbox.html",
+    "model_answer": "Dual writes (DB then broker) aren't atomic — either can fail, leaving them inconsistent. **Transactional outbox**: write the event into an `outbox` table in the *same* DB transaction as the state change (so they commit together). A separate relay/CDC process reads the outbox and publishes to the broker **at-least-once**; consumers dedup by event id. This converts a distributed-atomicity problem into a local transaction + idempotent consumers — the standard answer."
+  }
+]

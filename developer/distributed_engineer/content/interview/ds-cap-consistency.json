@@ -1,0 +1,57 @@
+[
+  {
+    "slug": "iq-cap-partition-consequences",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "A network partition splits your replicated database into two groups that can't talk. Walk through exactly what a client sees in a CP system versus an AP system during the partition, and what each one gives up.",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "Martin Kleppmann — Please stop calling databases CP or AP",
+    "source_url": "https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html",
+    "model_answer": "During a partition both designs keep nodes alive — the choice is what each does with requests it can't coordinate.\n\n**CP (e.g. etcd, ZooKeeper):** the minority side cannot reach a quorum, so it *refuses* operations it can't make safe. A client there sees **errors or timeouts** rather than stale data. You preserve linearizability — every successful read still reflects the latest committed write — but you sacrifice **availability** for clients stranded on the wrong side.\n\n**AP (e.g. Cassandra, Dynamo):** every node keeps answering from whatever it locally has. Clients get a **non-error response**, but two clients on opposite sides may read or write *divergent* values; the system reconciles later (last-write-wins, vector clocks, CRDTs). You keep availability but give up recency/linearizability.\n\nThe honest framing isn't \"pick 2 of 3\" — partitions aren't optional. It's: when one happens, is stale/conflicting data worse, or is an error worse, for *this* feature?",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-linearizability-vs-serializability",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Precisely distinguish linearizability from serializability. What does each guarantee, and what is strict serializability?",
+    "companies": "Senior backend / system design interviews",
+    "source_name": "DDIA Ch.9 — Consistency and Consensus",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "They answer different questions and are often confused.\n\n**Linearizability** is a *recency* guarantee on **single objects**: every operation appears to take effect atomically at one instant between its call and return, consistent with **real-time order**. If write W completes before read R starts (wall-clock), R must see W or newer. It makes the system look like one up-to-date copy — but says nothing about multi-object transactions.\n\n**Serializability** is a *transaction-isolation* guarantee: concurrent transactions over many objects appear to execute in **some** serial order, one at a time. It says nothing about real time — that order need not match the wall-clock order in which transactions committed.\n\n**Strict serializability** = both at once: transactions appear serial **and** that serial order respects real-time order (if T1 commits before T2 starts, T1 precedes T2). It is the multi-object generalization of linearizability and the strongest practical model (e.g. Spanner targets it).\n\nMnemonic: linearizability = single-object recency; serializability = transaction ordering; strict serializability = both.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-pacelc-latency-vs-consistency",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "CAP only describes behavior during a partition, but partitions are rare. What tradeoff does PACELC add, and why does it matter for systems that are healthy 99.9% of the time?",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "Martin Kleppmann — Please stop calling databases CP or AP",
+    "source_url": "https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html",
+    "model_answer": "CAP's blind spot: it only constrains the system *during* a partition (P). But partitions are infrequent — most of the time the network is fine, and CAP says nothing about that common case. Kleppmann notes CAP ignores **latency**, which is what users actually feel.\n\n**PACELC** extends it: **if Partition, choose Availability or Consistency; Else (no partition), choose Latency or Consistency.** The \"else\" clause is the one that bites you daily.\n\nThe reason: linearizable reads/writes require coordination — a quorum or leader round-trip — on *every* operation, even when nothing is broken. That coordination costs latency. So even a perfectly healthy system pays for strong consistency in milliseconds per request.\n\nExamples: Dynamo/Cassandra are **PA/EL** (favor availability and low latency); a system like Spanner is **PC/EC** (consistency in both modes, paying latency via TrueTime waits). Asking \"what's your latency-vs-consistency posture when healthy?\" is usually more useful than the CP/AP label.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-choose-consistency-model-per-feature",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "You're designing a system with three features: account balances/transfers, a username-uniqueness check at signup, and a 'who liked this post' counter. Choose a consistency model for each and justify it.",
+    "companies": "Senior backend / system design interviews",
+    "source_name": "The System Design Primer — Consistency patterns",
+    "source_url": "https://github.com/donnemartin/system-design-primer#consistency-patterns",
+    "model_answer": "The skill is matching each feature to the *weakest* model it can correctly tolerate — no weaker.\n\n**Balances / transfers → strong (linearizable, CP).** Money is a hard invariant; reading a stale balance or allowing two concurrent withdrawals causes real loss. This needs a single source of truth and coordination (consensus/leader), accepting that a partition may make some clients error out.\n\n**Username uniqueness → linearizable on that key (strong/CP).** Uniqueness is a constraint two concurrent signups can violate under eventual consistency. It requires a linearizable compare-and-set / unique index, which is exactly the kind of agreement consensus provides.\n\n**Like counter / 'who liked' → eventual (AP).** A like count that's briefly off by a few, or a name appearing a second late, is harmless. Optimize for availability and low latency; converge with CRDT counters or async aggregation.\n\nMost real systems are **mixed**: strong for the few correctness-critical invariants, eventual for everything else. Note eventual consistency promises convergence but says nothing about *when*.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-cap-consistency-not-acid",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "An interviewer says 'CAP's C is the same as the C in ACID.' Correct them: what does CAP's 'consistency' actually mean, and how does it differ from ACID consistency?",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "Martin Kleppmann — Please stop calling databases CP or AP",
+    "source_url": "https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html",
+    "model_answer": "They're different concepts that unluckily share a letter.\n\n**CAP's C is linearizability** — a *recency* property across replicas: it looks like there's one copy of the data and every read sees the latest completed write, in real-time order. It's about how a replicated single object behaves, not about application correctness rules.\n\n**ACID's C (consistency)** means a transaction takes the database from one valid state to another, preserving application **invariants** (foreign keys, check constraints, balances summing correctly). As Kleppmann notes, this is really a property the *application* defines and upholds — the database just provides atomicity and isolation to make it achievable. It has nothing to do with replicas or real-time ordering.\n\nYou can have a single-node SQL database that is fully ACID-consistent but, once replicated asynchronously, is **not** linearizable. Conversely a linearizable key-value store (etcd) knows nothing about your business invariants. Same word, unrelated guarantees — conflating them is a classic interview trap.",
+    "challenge_slug": ""
+  }
+]

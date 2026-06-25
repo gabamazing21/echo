@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-toolchain-run-vs-build",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "What is the difference between `go run`, `go build`, and `go install`? When would you use each?",
+    "companies": "Common Go screening",
+    "source_name": "Go docs — cmd/go",
+    "source_url": "https://pkg.go.dev/cmd/go",
+    "model_answer": "**`go run`** compiles to a temp location and executes in one step — for fast iteration while learning/developing; it throws the binary away.\n\n**`go build`** compiles and leaves a binary in the current directory (or `-o path`) — when you want an artifact to ship or run yourself. The result is a *single static binary* with no runtime to install, which is why Go dominates infra (scp it and run).\n\n**`go install`** builds and installs the binary into `$GOBIN` (on your PATH) — for installing CLI tools you want to invoke by name.\n\nFollow-up they look for: builds are cached (`$GOCACHE`), so repeat builds are fast; and cross-compilation is just `GOOS=linux GOARCH=amd64 go build`."
+  },
+  {
+    "slug": "iq-toolchain-go-mod-tidy",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "What does `go mod tidy` do, and what problem do `go.mod` and `go.sum` solve?",
+    "companies": "Common Go screening",
+    "source_name": "Go Modules Reference",
+    "source_url": "https://go.dev/ref/mod",
+    "model_answer": "`go.mod` declares the module path, the Go version, and the *direct* dependency requirements. `go.sum` records cryptographic checksums of every module version in the build graph so builds are verifiable and reproducible (supply-chain integrity).\n\n`go mod tidy` reconciles `go.mod`/`go.sum` with what the code actually imports: it **adds** missing requirements, **removes** unused ones, and updates `go.sum`. Run it after adding/removing imports.\n\nDepth signal: Go uses **Minimal Version Selection** — it picks the *lowest* version that satisfies all requirements, which makes builds deterministic (unlike 'newest that matches a range')."
+  },
+  {
+    "slug": "iq-toolchain-static-binary",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Why is a Go binary easy to deploy compared to a Python or Node service, and what's the catch with CGO?",
+    "companies": "Infra / platform roles",
+    "source_name": "Go docs",
+    "source_url": "https://go.dev/doc/",
+    "model_answer": "Go compiles to a **single statically-linked binary** that bundles the runtime and dependencies — no interpreter, virtualenv, or `node_modules` on the target. Deploy = copy one file (great for containers: a `FROM scratch` image can be a few MB).\n\nThe catch: if you import C code (**CGO**, e.g. some sqlite drivers), the binary becomes dynamically linked against libc and loses pure-static portability. Set `CGO_ENABLED=0` for a fully static build, and prefer pure-Go libraries when you want `scratch`/distroless images."
+  }
+]

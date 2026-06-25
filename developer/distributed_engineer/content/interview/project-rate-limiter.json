@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-rl-distributed",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Your token-bucket limiter works in one process. Now you have 10 instances behind a load balancer and need a global limit. Design it.",
+    "companies": "Stripe, Cloudflare, backend interviews",
+    "source_name": "Stripe — Scaling your API with rate limiters",
+    "source_url": "https://stripe.com/blog/rate-limiters",
+    "model_answer": "Per-instance limiters let total traffic = N × limit. Centralize state in a shared store (Redis): an atomic Lua script implementing token-bucket or sliding-window-counter per key, so all instances decrement the same budget. Trade-offs: a network hop per request (mitigate by batching/local leases — each instance leases a slice of tokens and refills from Redis), and Redis becomes a dependency/SPOF (replicate it). Approximate algorithms (sliding window counter) trade a little accuracy for less state. Name the consistency-vs-latency trade."
+  },
+  {
+    "slug": "iq-rl-token-vs-leaky",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Token bucket vs leaky bucket vs fixed/sliding window — when do you pick each?",
+    "companies": "Backend / infra interviews",
+    "source_name": "Cloudflare — How we built rate limiting",
+    "source_url": "https://blog.cloudflare.com/counting-things-a-lot-of-different-things/",
+    "model_answer": "**Token bucket**: allows bursts up to bucket size, smooths to a steady refill rate — good default for APIs. **Leaky bucket**: outflow is constant (queue drains at fixed rate) — smooths bursts into a steady stream, good for protecting a downstream with fixed capacity. **Fixed window**: simple counter per interval but allows 2× burst at the boundary. **Sliding window (log/counter)**: fixes the boundary burst, more accurate, more state. Pick by whether you want to *allow* bursts (token) or *flatten* them (leaky), and how much accuracy/state you'll pay for."
+  },
+  {
+    "slug": "iq-rl-deterministic-test",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Time-based logic is hard to test without flaky sleeps. How do you make the rate limiter deterministically testable?",
+    "companies": "Go / backend interviews",
+    "source_name": "Go — testing time (clock injection)",
+    "source_url": "https://pkg.go.dev/time",
+    "model_answer": "Inject the clock: make the limiter depend on a `now func() time.Time` (or a small Clock interface) instead of calling `time.Now()` directly. In production pass `time.Now`; in tests pass a fake clock you advance manually, so you can assert exact behavior (allow K, then deny, then advance 1s, allow again) with zero `time.Sleep` — fast and non-flaky. This 'inject time' technique (functional options / interface) is the expected senior answer for any time-dependent component."
+  }
+]

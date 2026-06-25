@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-wp-panic-recovery",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "One worker panics processing a job. What happens to the other workers and in-flight jobs, and how do you make the pool resilient?",
+    "companies": "Go / backend interviews",
+    "source_name": "Effective Go — Recover",
+    "source_url": "https://go.dev/doc/effective_go#recover",
+    "model_answer": "A panic crashes the *process* unless that goroutine recovers — and a request's recover middleware does NOT cover worker goroutines you spawned. So wrap each worker's job loop in a `defer func(){ if r:=recover(); r!=nil { log + mark job failed } }()` so one bad job doesn't take down the pool. Decide policy: drop the job, requeue with a retry cap, or send it to a dead-letter queue. Resilience signal: isolate failures per job, keep the pool alive, and don't lose track of the failed unit of work."
+  },
+  {
+    "slug": "iq-wp-priority-queue",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Add priorities so urgent jobs jump the line. What data structure, and what's the Go stdlib support?",
+    "companies": "Go / backend interviews",
+    "source_name": "Go container/heap docs",
+    "source_url": "https://pkg.go.dev/container/heap",
+    "model_answer": "A FIFO channel can't reorder, so back the queue with a **binary heap** (priority queue): implement `heap.Interface` (Len/Less/Swap/Push/Pop) over a slice, ordered by priority. Guard it with a mutex + a condition/notify channel since multiple goroutines push/pop. `Push`/`Pop` are O(log n). Watch starvation: pure priority can starve low-priority jobs forever — add aging (bump priority with wait time). This combines Step 2's heap with the pool."
+  },
+  {
+    "slug": "iq-wp-backpressure",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "How do you know if N=5 workers is right vs N=50, and what does a full queue tell you?",
+    "companies": "Backend / infra interviews",
+    "source_name": "Wikipedia — Little's Law",
+    "source_url": "https://en.wikipedia.org/wiki/Little%27s_law",
+    "model_answer": "Measure, then reason with **Little's Law**: L (in-flight) = λ (arrival rate) × W (time per job). To keep up, workers ≈ λ × service-time. Track queue depth and worker utilization: a persistently full bounded queue means arrivals exceed capacity (backpressure → producers slow or you must scale workers / shard). An always-empty queue with idle workers means you over-provisioned. For CPU-bound work cap N near #cores; for I/O-bound, N can be much higher. The signal: tune from metrics, not a guess."
+  }
+]

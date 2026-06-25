@@ -1,0 +1,1373 @@
+{
+  "tasks": [
+    {
+      "step": 1,
+      "phase": "Go fundamentals",
+      "week": "W1",
+      "type": "Topic",
+      "task": "Set up Go, your editor (VS Code + Go ext) and run your first program",
+      "concept": "Toolchain, go run / go build, go.mod",
+      "hrs": 3,
+      "deadline": "2026-06-28"
+    },
+    {
+      "step": 1,
+      "phase": "Go fundamentals",
+      "week": "W1",
+      "type": "Topic",
+      "task": "Tour of Go — variables, types, functions, control flow",
+      "concept": "Static typing, declarations, scope",
+      "hrs": 6,
+      "deadline": "2026-06-28"
+    },
+    {
+      "step": 1,
+      "phase": "Go fundamentals",
+      "week": "W1",
+      "type": "Topic",
+      "task": "Slices, arrays, maps — the core data containers",
+      "concept": "Slices vs arrays, append, make, zero values",
+      "hrs": 6,
+      "deadline": "2026-06-28"
+    },
+    {
+      "step": 1,
+      "phase": "Go fundamentals",
+      "week": "W2",
+      "type": "Topic",
+      "task": "Structs, methods, interfaces, pointers",
+      "concept": "Value vs pointer receivers, interface satisfaction",
+      "hrs": 8,
+      "deadline": "2026-07-05"
+    },
+    {
+      "step": 1,
+      "phase": "Go fundamentals",
+      "week": "W2",
+      "type": "Topic",
+      "task": "Error handling the Go way (error values, not exceptions)",
+      "concept": "Errors as values, wrapping, errors.Is/As",
+      "hrs": 5,
+      "deadline": "2026-07-05"
+    },
+    {
+      "step": 1,
+      "phase": "Go fundamentals",
+      "week": "W2",
+      "type": "Code project",
+      "task": "Build a command-line to-do app (add/list/done, save to file)",
+      "concept": "I/O, encoding/json, slices of structs",
+      "hrs": 6,
+      "deadline": "2026-07-05"
+    },
+    {
+      "step": 1,
+      "phase": "Go fundamentals",
+      "week": "W3",
+      "type": "Topic",
+      "task": "Packages, modules, testing with the standard library",
+      "concept": "go test, table-driven tests, package layout",
+      "hrs": 6,
+      "deadline": "2026-07-12"
+    },
+    {
+      "step": 1,
+      "phase": "Go fundamentals",
+      "week": "W3",
+      "type": "Code project",
+      "task": "Build a CLI 'word count' tool + write tests for it",
+      "concept": "Testing, file reading, maps for counting",
+      "hrs": 6,
+      "deadline": "2026-07-12"
+    },
+    {
+      "step": 1,
+      "phase": "Go fundamentals",
+      "week": "W3",
+      "type": "Quiz",
+      "task": "Take Step 1 theory quiz + code quiz (Quiz Bank tab)",
+      "concept": "Self-check before moving on",
+      "hrs": 2,
+      "deadline": "2026-07-12"
+    },
+    {
+      "step": 2,
+      "phase": "Data structures & algorithms",
+      "week": "W1",
+      "type": "Topic",
+      "task": "Big-O notation: time & space complexity",
+      "concept": "How to reason about cost, not just correctness",
+      "hrs": 4,
+      "deadline": "2026-07-19"
+    },
+    {
+      "step": 2,
+      "phase": "Data structures & algorithms",
+      "week": "W1",
+      "type": "Topic",
+      "task": "Arrays, linked lists, stacks, queues — implement each in Go",
+      "concept": "Pointers, references, dynamic structures",
+      "hrs": 8,
+      "deadline": "2026-07-19"
+    },
+    {
+      "step": 2,
+      "phase": "Data structures & algorithms",
+      "week": "W1",
+      "type": "Topic",
+      "task": "Hash maps: how they work under the hood",
+      "concept": "Hashing, collisions, O(1) average lookup",
+      "hrs": 4,
+      "deadline": "2026-07-19"
+    },
+    {
+      "step": 2,
+      "phase": "Data structures & algorithms",
+      "week": "W2",
+      "type": "Topic",
+      "task": "Trees & binary search trees; recursion",
+      "concept": "Recursion, tree traversal, BST invariants",
+      "hrs": 7,
+      "deadline": "2026-07-26"
+    },
+    {
+      "step": 2,
+      "phase": "Data structures & algorithms",
+      "week": "W2",
+      "type": "Topic",
+      "task": "Sorting (quick/merge) & binary search",
+      "concept": "Divide and conquer, when to use which",
+      "hrs": 6,
+      "deadline": "2026-07-26"
+    },
+    {
+      "step": 2,
+      "phase": "Data structures & algorithms",
+      "week": "W2",
+      "type": "Code project",
+      "task": "Implement a generic stack, queue, and a BST in Go (with tests)",
+      "concept": "Generics, invariants, test coverage",
+      "hrs": 7,
+      "deadline": "2026-07-26"
+    },
+    {
+      "step": 2,
+      "phase": "Data structures & algorithms",
+      "week": "W3",
+      "type": "Practice",
+      "task": "Solve 30 easy + 10 medium problems (NeetCode/LeetCode)",
+      "concept": "Pattern recognition under time pressure",
+      "hrs": 14,
+      "deadline": "2026-08-02"
+    },
+    {
+      "step": 2,
+      "phase": "Data structures & algorithms",
+      "week": "W3",
+      "type": "Quiz",
+      "task": "Take Step 2 theory + code quiz",
+      "concept": "Self-check",
+      "hrs": 2,
+      "deadline": "2026-08-02"
+    },
+    {
+      "step": 3,
+      "phase": "How computers & networks work",
+      "week": "W1",
+      "type": "Topic",
+      "task": "Processes, threads, memory, the OS scheduler",
+      "concept": "What a 'machine' actually does",
+      "hrs": 5,
+      "deadline": "2026-08-09"
+    },
+    {
+      "step": 3,
+      "phase": "How computers & networks work",
+      "week": "W1",
+      "type": "Topic",
+      "task": "TCP/IP, HTTP, DNS, ports — how two machines talk",
+      "concept": "The network stack, request/response",
+      "hrs": 7,
+      "deadline": "2026-08-09"
+    },
+    {
+      "step": 3,
+      "phase": "How computers & networks work",
+      "week": "W1",
+      "type": "Code project",
+      "task": "Write a tiny TCP echo server + client in Go (net package)",
+      "concept": "Sockets, listeners, connections",
+      "hrs": 5,
+      "deadline": "2026-08-09"
+    },
+    {
+      "step": 3,
+      "phase": "How computers & networks work",
+      "week": "W2",
+      "type": "Topic",
+      "task": "HTTP deeper: methods, status codes, headers, keep-alive",
+      "concept": "Statelessness, idempotency",
+      "hrs": 4,
+      "deadline": "2026-08-16"
+    },
+    {
+      "step": 3,
+      "phase": "How computers & networks work",
+      "week": "W2",
+      "type": "Code project",
+      "task": "Write a minimal HTTP server from scratch (net/http)",
+      "concept": "Handlers, routing, the request lifecycle",
+      "hrs": 5,
+      "deadline": "2026-08-16"
+    },
+    {
+      "step": 3,
+      "phase": "How computers & networks work",
+      "week": "W2",
+      "type": "Quiz",
+      "task": "Take Step 3 theory + code quiz",
+      "concept": "Self-check",
+      "hrs": 2,
+      "deadline": "2026-08-16"
+    },
+    {
+      "step": 4,
+      "phase": "Build real backend APIs",
+      "week": "W1",
+      "type": "Topic",
+      "task": "REST principles & JSON APIs",
+      "concept": "Resources, verbs, status codes, idempotency",
+      "hrs": 4,
+      "deadline": "2026-08-23"
+    },
+    {
+      "step": 4,
+      "phase": "Build real backend APIs",
+      "week": "W1",
+      "type": "Topic",
+      "task": "Echo framework: routing, middleware, binding, validation",
+      "concept": "Middleware chains, context",
+      "hrs": 7,
+      "deadline": "2026-08-23"
+    },
+    {
+      "step": 4,
+      "phase": "Build real backend APIs",
+      "week": "W1",
+      "type": "Code project",
+      "task": "Build a 'bookmarks' REST API with Echo (CRUD)",
+      "concept": "Handlers, JSON binding, error responses",
+      "hrs": 8,
+      "deadline": "2026-08-23"
+    },
+    {
+      "step": 4,
+      "phase": "Build real backend APIs",
+      "week": "W2",
+      "type": "Topic",
+      "task": "PostgreSQL with database/sql + pgx; migrations (golang-migrate)",
+      "concept": "Connection pools, prepared statements",
+      "hrs": 8,
+      "deadline": "2026-08-30"
+    },
+    {
+      "step": 4,
+      "phase": "Build real backend APIs",
+      "week": "W2",
+      "type": "Code project",
+      "task": "Wire the bookmarks API to Postgres + add migrations",
+      "concept": "Persistence, SQL injection safety",
+      "hrs": 8,
+      "deadline": "2026-08-30"
+    },
+    {
+      "step": 4,
+      "phase": "Build real backend APIs",
+      "week": "W3",
+      "type": "Topic",
+      "task": "Auth: password hashing, JWT/sessions, middleware guards",
+      "concept": "Authentication vs authorization",
+      "hrs": 6,
+      "deadline": "2026-09-06"
+    },
+    {
+      "step": 4,
+      "phase": "Build real backend APIs",
+      "week": "W3",
+      "type": "Code project",
+      "task": "Add user signup/login + protect routes (this mirrors Lokatalent)",
+      "concept": "Secure auth flow",
+      "hrs": 8,
+      "deadline": "2026-09-06"
+    },
+    {
+      "step": 4,
+      "phase": "Build real backend APIs",
+      "week": "W3",
+      "type": "Quiz",
+      "task": "Take Step 4 theory + code quiz",
+      "concept": "Self-check",
+      "hrs": 2,
+      "deadline": "2026-09-06"
+    },
+    {
+      "step": 5,
+      "phase": "Concurrency in Go",
+      "week": "W1",
+      "type": "Topic",
+      "task": "Goroutines & the Go scheduler",
+      "concept": "Lightweight concurrency, M:N scheduling",
+      "hrs": 5,
+      "deadline": "2026-09-13"
+    },
+    {
+      "step": 5,
+      "phase": "Concurrency in Go",
+      "week": "W1",
+      "type": "Topic",
+      "task": "Channels: buffered/unbuffered, select, directions",
+      "concept": "Communicating via channels, not shared memory",
+      "hrs": 7,
+      "deadline": "2026-09-13"
+    },
+    {
+      "step": 5,
+      "phase": "Concurrency in Go",
+      "week": "W1",
+      "type": "Code project",
+      "task": "Build a concurrent web-page fetcher (fan-out)",
+      "concept": "Goroutines + channels in anger",
+      "hrs": 6,
+      "deadline": "2026-09-13"
+    },
+    {
+      "step": 5,
+      "phase": "Concurrency in Go",
+      "week": "W2",
+      "type": "Topic",
+      "task": "sync package: Mutex, RWMutex, WaitGroup, Once",
+      "concept": "Shared state, race conditions",
+      "hrs": 6,
+      "deadline": "2026-09-20"
+    },
+    {
+      "step": 5,
+      "phase": "Concurrency in Go",
+      "week": "W2",
+      "type": "Topic",
+      "task": "context package: cancellation, deadlines, timeouts",
+      "concept": "Propagating cancellation across calls",
+      "hrs": 5,
+      "deadline": "2026-09-20"
+    },
+    {
+      "step": 5,
+      "phase": "Concurrency in Go",
+      "week": "W2",
+      "type": "Code project",
+      "task": "Build a worker pool with graceful shutdown + the race detector",
+      "concept": "Backpressure, -race, leaks",
+      "hrs": 8,
+      "deadline": "2026-09-20"
+    },
+    {
+      "step": 5,
+      "phase": "Concurrency in Go",
+      "week": "W3",
+      "type": "Topic",
+      "task": "Concurrency patterns: pipelines, fan-in/fan-out, rate limiting",
+      "concept": "Composing concurrent stages",
+      "hrs": 6,
+      "deadline": "2026-09-27"
+    },
+    {
+      "step": 5,
+      "phase": "Concurrency in Go",
+      "week": "W3",
+      "type": "Code project",
+      "task": "Build a token-bucket rate limiter (concurrent-safe)",
+      "concept": "Time, tickers, mutexes",
+      "hrs": 6,
+      "deadline": "2026-09-27"
+    },
+    {
+      "step": 5,
+      "phase": "Concurrency in Go",
+      "week": "W3",
+      "type": "Quiz",
+      "task": "Take Step 5 theory + code quiz",
+      "concept": "Self-check",
+      "hrs": 2,
+      "deadline": "2026-09-27"
+    },
+    {
+      "step": 6,
+      "phase": "Databases, deep",
+      "week": "W1",
+      "type": "Topic",
+      "task": "Transactions & ACID; isolation levels",
+      "concept": "Atomicity, consistency, isolation, durability",
+      "hrs": 6,
+      "deadline": "2026-10-04"
+    },
+    {
+      "step": 6,
+      "phase": "Databases, deep",
+      "week": "W1",
+      "type": "Topic",
+      "task": "Indexing: B-trees, why queries are slow, EXPLAIN ANALYZE",
+      "concept": "Query planning, index selection",
+      "hrs": 6,
+      "deadline": "2026-10-04"
+    },
+    {
+      "step": 6,
+      "phase": "Databases, deep",
+      "week": "W2",
+      "type": "Topic",
+      "task": "Concurrency control: locks, MVCC, lost updates",
+      "concept": "What happens when two writes collide",
+      "hrs": 6,
+      "deadline": "2026-10-11"
+    },
+    {
+      "step": 6,
+      "phase": "Databases, deep",
+      "week": "W2",
+      "type": "Code project",
+      "task": "Take your bookmarks DB: add indexes, run EXPLAIN, wrap a multi-step write in a transaction",
+      "concept": "Real query tuning + safe writes",
+      "hrs": 7,
+      "deadline": "2026-10-11"
+    },
+    {
+      "step": 6,
+      "phase": "Databases, deep",
+      "week": "W2",
+      "type": "Quiz",
+      "task": "Take Step 6 theory + code quiz",
+      "concept": "Self-check",
+      "hrs": 2,
+      "deadline": "2026-10-11"
+    },
+    {
+      "step": 7,
+      "phase": "Distributed systems theory",
+      "week": "W1",
+      "type": "Topic",
+      "task": "Why distributed systems exist; the 8 fallacies",
+      "concept": "Latency, partial failure, unreliable networks",
+      "hrs": 4,
+      "deadline": "2026-10-18"
+    },
+    {
+      "step": 7,
+      "phase": "Distributed systems theory",
+      "week": "W1",
+      "type": "Topic",
+      "task": "DDIA Ch.1-4: reliability, data models, storage engines",
+      "concept": "Foundations of data systems",
+      "hrs": 10,
+      "deadline": "2026-10-18"
+    },
+    {
+      "step": 7,
+      "phase": "Distributed systems theory",
+      "week": "W2",
+      "type": "Topic",
+      "task": "Replication: leader/follower, sync vs async, lag",
+      "concept": "Keeping copies consistent",
+      "hrs": 7,
+      "deadline": "2026-10-25"
+    },
+    {
+      "step": 7,
+      "phase": "Distributed systems theory",
+      "week": "W2",
+      "type": "Topic",
+      "task": "Partitioning / sharding & rebalancing",
+      "concept": "Splitting data across nodes",
+      "hrs": 6,
+      "deadline": "2026-10-25"
+    },
+    {
+      "step": 7,
+      "phase": "Distributed systems theory",
+      "week": "W3",
+      "type": "Topic",
+      "task": "CAP theorem, consistency models, linearizability",
+      "concept": "The fundamental tradeoff",
+      "hrs": 6,
+      "deadline": "2026-11-01"
+    },
+    {
+      "step": 7,
+      "phase": "Distributed systems theory",
+      "week": "W3",
+      "type": "Topic",
+      "task": "Consensus: the Raft algorithm (read the paper + watch lectures)",
+      "concept": "Leader election, log replication, safety",
+      "hrs": 10,
+      "deadline": "2026-11-01"
+    },
+    {
+      "step": 7,
+      "phase": "Distributed systems theory",
+      "week": "W4",
+      "type": "Topic",
+      "task": "DDIA Ch.5-9: transactions, trouble, consistency & consensus",
+      "concept": "Tying theory together",
+      "hrs": 12,
+      "deadline": "2026-11-08"
+    },
+    {
+      "step": 7,
+      "phase": "Distributed systems theory",
+      "week": "W4",
+      "type": "Quiz",
+      "task": "Take Step 7 theory quiz",
+      "concept": "Self-check",
+      "hrs": 2,
+      "deadline": "2026-11-08"
+    },
+    {
+      "step": 8,
+      "phase": "Build distributed systems",
+      "week": "W1",
+      "type": "Code project",
+      "task": "MIT 6.824 Lab 1: MapReduce in Go",
+      "concept": "Distributed computation, coordination",
+      "hrs": 12,
+      "deadline": "2026-11-15"
+    },
+    {
+      "step": 8,
+      "phase": "Build distributed systems",
+      "week": "W2",
+      "type": "Code project",
+      "task": "MIT 6.824 Lab 2: implement Raft (leader election)",
+      "concept": "Consensus in practice",
+      "hrs": 14,
+      "deadline": "2026-11-22"
+    },
+    {
+      "step": 8,
+      "phase": "Build distributed systems",
+      "week": "W3",
+      "type": "Code project",
+      "task": "MIT 6.824 Lab 2 cont.: log replication & persistence",
+      "concept": "The hard part of Raft",
+      "hrs": 14,
+      "deadline": "2026-11-29"
+    },
+    {
+      "step": 8,
+      "phase": "Build distributed systems",
+      "week": "W4",
+      "type": "Code project",
+      "task": "Build a small replicated key-value store on top of your Raft",
+      "concept": "Putting it together",
+      "hrs": 12,
+      "deadline": "2026-12-06"
+    },
+    {
+      "step": 8,
+      "phase": "Build distributed systems",
+      "week": "W4",
+      "type": "Code project",
+      "task": "Build a distributed lock using your KV store",
+      "concept": "Coordination primitive",
+      "hrs": 6,
+      "deadline": "2026-12-06"
+    },
+    {
+      "step": 8,
+      "phase": "Build distributed systems",
+      "week": "W4",
+      "type": "Quiz",
+      "task": "Take Step 8 code quiz / self-review checklist",
+      "concept": "Self-check",
+      "hrs": 2,
+      "deadline": "2026-12-06"
+    },
+    {
+      "step": 9,
+      "phase": "System design",
+      "week": "W1",
+      "type": "Topic",
+      "task": "System design framework: requirements, estimation, API, data, scale",
+      "concept": "How to structure the answer",
+      "hrs": 5,
+      "deadline": "2026-12-13"
+    },
+    {
+      "step": 9,
+      "phase": "System design",
+      "week": "W1",
+      "type": "Code project",
+      "task": "Design a URL shortener end-to-end (write it up)",
+      "concept": "Hashing, caching, read-heavy scale",
+      "hrs": 4,
+      "deadline": "2026-12-13"
+    },
+    {
+      "step": 9,
+      "phase": "System design",
+      "week": "W1",
+      "type": "Code project",
+      "task": "Design a chat app (WhatsApp-style)",
+      "concept": "Fan-out, presence, message ordering",
+      "hrs": 4,
+      "deadline": "2026-12-13"
+    },
+    {
+      "step": 9,
+      "phase": "System design",
+      "week": "W2",
+      "type": "Code project",
+      "task": "Design ride-dispatch / proximity matching (use Lokatalent!)",
+      "concept": "Geospatial sharding, real-time matching",
+      "hrs": 5,
+      "deadline": "2026-12-20"
+    },
+    {
+      "step": 9,
+      "phase": "System design",
+      "week": "W2",
+      "type": "Practice",
+      "task": "Do 5 mock system-design questions out loud / recorded",
+      "concept": "Communication under pressure",
+      "hrs": 8,
+      "deadline": "2026-12-20"
+    },
+    {
+      "step": 9,
+      "phase": "System design",
+      "week": "W2",
+      "type": "Quiz",
+      "task": "Take Step 9 theory quiz",
+      "concept": "Self-check",
+      "hrs": 2,
+      "deadline": "2026-12-20"
+    },
+    {
+      "step": 10,
+      "phase": "Visible proof & job hunt",
+      "week": "W1",
+      "type": "Task",
+      "task": "Polish 3 best projects on GitHub (READMEs, tests, CI with GitHub Actions)",
+      "concept": "Demonstrated, not claimed, skill",
+      "hrs": 8,
+      "deadline": "2026-12-27"
+    },
+    {
+      "step": 10,
+      "phase": "Visible proof & job hunt",
+      "week": "W1",
+      "type": "Task",
+      "task": "Write a short blog post explaining your Raft implementation",
+      "concept": "Teaching = proof of depth",
+      "hrs": 5,
+      "deadline": "2026-12-27"
+    },
+    {
+      "step": 10,
+      "phase": "Visible proof & job hunt",
+      "week": "W2",
+      "type": "Task",
+      "task": "Find & fix one 'good first issue' in a Go distributed project (etcd/NATS/Temporal)",
+      "concept": "Real open-source signal",
+      "hrs": 10,
+      "deadline": "2027-01-03"
+    },
+    {
+      "step": 10,
+      "phase": "Visible proof & job hunt",
+      "week": "W2",
+      "type": "Task",
+      "task": "Update CV/LinkedIn; start applying + reach out to engineers",
+      "concept": "Visibility = opportunity",
+      "hrs": 6,
+      "deadline": "2027-01-03"
+    },
+    {
+      "step": 10,
+      "phase": "Visible proof & job hunt",
+      "week": "W2",
+      "type": "Quiz",
+      "task": "Final self-assessment checklist",
+      "concept": "Are you interview-ready?",
+      "hrs": 2,
+      "deadline": "2027-01-03"
+    }
+  ],
+  "resources": [
+    {
+      "step": 1,
+      "name": "A Tour of Go",
+      "type": "Interactive",
+      "free": "Free",
+      "link": "https://go.dev/tour/",
+      "why": "Do every section. Your hands-on intro to the language.",
+      "time": "8 hrs"
+    },
+    {
+      "step": 1,
+      "name": "Go by Example",
+      "type": "Reference",
+      "free": "Free",
+      "link": "https://gobyexample.com/",
+      "why": "Bite-size annotated examples. Keep it open as a cheat sheet.",
+      "time": "ongoing"
+    },
+    {
+      "step": 1,
+      "name": "Learn Go with Tests",
+      "type": "Course",
+      "free": "Free",
+      "link": "https://quii.gitbook.io/learn-go-with-tests",
+      "why": "Best free Go course — test-driven, builds real habits.",
+      "time": "20 hrs"
+    },
+    {
+      "step": 1,
+      "name": "Exercism — Go track",
+      "type": "Practice",
+      "free": "Free",
+      "link": "https://exercism.org/tracks/go",
+      "why": "Graded exercises with mentor feedback.",
+      "time": "ongoing"
+    },
+    {
+      "step": 1,
+      "name": "The Go Programming Language (Donovan & Kernighan)",
+      "type": "Book",
+      "free": "Paid",
+      "link": "https://www.gopl.io/",
+      "why": "The canonical book — you already started it. Optional but excellent.",
+      "time": "ref"
+    },
+    {
+      "step": 2,
+      "name": "NeetCode roadmap",
+      "type": "Course/Practice",
+      "free": "Free",
+      "link": "https://neetcode.io/roadmap",
+      "why": "Structured DSA path with video solutions.",
+      "time": "ongoing"
+    },
+    {
+      "step": 2,
+      "name": "Grokking Algorithms",
+      "type": "Book",
+      "free": "Paid",
+      "link": "https://www.manning.com/books/grokking-algorithms",
+      "why": "Beginner-friendly, illustrated. Great first DSA book.",
+      "time": "ref"
+    },
+    {
+      "step": 2,
+      "name": "MIT 6.006 Intro to Algorithms (OCW)",
+      "type": "Course",
+      "free": "Free",
+      "link": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/",
+      "why": "Free lectures + notes for the theory.",
+      "time": "video"
+    },
+    {
+      "step": 2,
+      "name": "LeetCode",
+      "type": "Practice",
+      "free": "Free",
+      "link": "https://leetcode.com/",
+      "why": "Grind easy/medium. Filter by topic.",
+      "time": "ongoing"
+    },
+    {
+      "step": 3,
+      "name": "Stanford CS144 — Computer Networking",
+      "type": "Course",
+      "free": "Free",
+      "link": "https://cs144.github.io/",
+      "why": "Free lectures; the build-a-TCP project is gold.",
+      "time": "video"
+    },
+    {
+      "step": 3,
+      "name": "Beej's Guide to Network Programming",
+      "type": "Guide",
+      "free": "Free",
+      "link": "https://beej.us/guide/bgnet/",
+      "why": "Classic, friendly intro to sockets.",
+      "time": "6 hrs"
+    },
+    {
+      "step": 3,
+      "name": "High Performance Browser Networking",
+      "type": "Book",
+      "free": "Free",
+      "link": "https://hpbn.co/",
+      "why": "Free online. Read the TCP/HTTP chapters.",
+      "time": "ref"
+    },
+    {
+      "step": 3,
+      "name": "Go net package docs",
+      "type": "Docs",
+      "free": "Free",
+      "link": "https://pkg.go.dev/net",
+      "why": "Reference for your TCP/HTTP projects.",
+      "time": "ref"
+    },
+    {
+      "step": 4,
+      "name": "Echo framework docs",
+      "type": "Docs",
+      "free": "Free",
+      "link": "https://echo.labstack.com/docs",
+      "why": "Your web framework — guides + recipes.",
+      "time": "4 hrs"
+    },
+    {
+      "step": 4,
+      "name": "Let's Go (Alex Edwards)",
+      "type": "Book",
+      "free": "Paid",
+      "link": "https://lets-go.alexedwards.net/",
+      "why": "The gold standard for production Go web apps.",
+      "time": "ref"
+    },
+    {
+      "step": 4,
+      "name": "PostgreSQL Tutorial",
+      "type": "Tutorial",
+      "free": "Free",
+      "link": "https://www.postgresqltutorial.com/",
+      "why": "Practical SQL from zero.",
+      "time": "8 hrs"
+    },
+    {
+      "step": 4,
+      "name": "golang-migrate",
+      "type": "Tool/Docs",
+      "free": "Free",
+      "link": "https://github.com/golang-migrate/migrate",
+      "why": "Migrations — same tool you use on Lokatalent.",
+      "time": "ref"
+    },
+    {
+      "step": 5,
+      "name": "Learn Go with Tests — Concurrency",
+      "type": "Course",
+      "free": "Free",
+      "link": "https://quii.gitbook.io/learn-go-with-tests/go-fundamentals/concurrency",
+      "why": "Hands-on concurrency with tests.",
+      "time": "6 hrs"
+    },
+    {
+      "step": 5,
+      "name": "Go Blog: Pipelines & cancellation",
+      "type": "Article",
+      "free": "Free",
+      "link": "https://go.dev/blog/pipelines",
+      "why": "Canonical concurrency patterns.",
+      "time": "2 hrs"
+    },
+    {
+      "step": 5,
+      "name": "Rob Pike — Concurrency is not Parallelism",
+      "type": "Talk",
+      "free": "Free",
+      "link": "https://go.dev/blog/waza-talk",
+      "why": "Foundational mental model (video).",
+      "time": "1 hr"
+    },
+    {
+      "step": 5,
+      "name": "Concurrency in Go (Cox-Buday)",
+      "type": "Book",
+      "free": "Paid",
+      "link": "https://www.oreilly.com/library/view/concurrency-in-go/9781491941294/",
+      "why": "Deep dive once you have the basics.",
+      "time": "ref"
+    },
+    {
+      "step": 6,
+      "name": "CMU 15-445 Database Systems (Andy Pavlo)",
+      "type": "Course",
+      "free": "Free",
+      "link": "https://15445.courses.cs.cmu.edu/",
+      "why": "The best free database course in existence.",
+      "time": "video"
+    },
+    {
+      "step": 6,
+      "name": "Use The Index, Luke!",
+      "type": "Guide",
+      "free": "Free",
+      "link": "https://use-the-index-luke.com/",
+      "why": "Everything about SQL indexing, free online.",
+      "time": "5 hrs"
+    },
+    {
+      "step": 6,
+      "name": "PostgreSQL official docs — MVCC & transactions",
+      "type": "Docs",
+      "free": "Free",
+      "link": "https://www.postgresql.org/docs/current/mvcc.html",
+      "why": "How Postgres handles concurrency.",
+      "time": "ref"
+    },
+    {
+      "step": 7,
+      "name": "MIT 6.824 Distributed Systems",
+      "type": "Course",
+      "free": "Free",
+      "link": "https://pdos.csail.mit.edu/6.824/",
+      "why": "THE course. Free lectures + the famous labs.",
+      "time": "video+labs"
+    },
+    {
+      "step": 7,
+      "name": "Designing Data-Intensive Applications (Kleppmann)",
+      "type": "Book",
+      "free": "Paid",
+      "link": "https://dataintensive.net/",
+      "why": "The bible of this field. Read it cover to cover.",
+      "time": "ref"
+    },
+    {
+      "step": 7,
+      "name": "Martin Kleppmann — Distributed Systems lectures",
+      "type": "Course",
+      "free": "Free",
+      "link": "https://www.youtube.com/playlist?list=PLeKd45zvjcDFUEv_ohr_HdUFe97RItdiB",
+      "why": "Free companion lectures + notes (Cambridge).",
+      "time": "video"
+    },
+    {
+      "step": 7,
+      "name": "The Raft paper (In Search of an Understandable Consensus Algorithm)",
+      "type": "Paper",
+      "free": "Free",
+      "link": "https://raft.github.io/raft.pdf",
+      "why": "Read it twice. Visual explainer at the same site.",
+      "time": "4 hrs"
+    },
+    {
+      "step": 7,
+      "name": "Raft visualization",
+      "type": "Interactive",
+      "free": "Free",
+      "link": "https://raft.github.io/",
+      "why": "See leader election & replication animate.",
+      "time": "1 hr"
+    },
+    {
+      "step": 8,
+      "name": "MIT 6.824 Labs (MapReduce, Raft, KV)",
+      "type": "Labs",
+      "free": "Free",
+      "link": "https://pdos.csail.mit.edu/6.824/labs/lab-mr.html",
+      "why": "Do these in Go. This is the centerpiece.",
+      "time": "video+labs"
+    },
+    {
+      "step": 8,
+      "name": "etcd source code",
+      "type": "Code",
+      "free": "Free",
+      "link": "https://github.com/etcd-io/etcd",
+      "why": "Real production Raft in Go — read it.",
+      "time": "ref"
+    },
+    {
+      "step": 8,
+      "name": "Temporal source / docs",
+      "type": "Code",
+      "free": "Free",
+      "link": "https://github.com/temporalio/temporal",
+      "why": "Durable execution, Go, great to study.",
+      "time": "ref"
+    },
+    {
+      "step": 9,
+      "name": "System Design Primer",
+      "type": "Guide",
+      "free": "Free",
+      "link": "https://github.com/donnemartin/system-design-primer",
+      "why": "Massive free repo. Your main study guide.",
+      "time": "ongoing"
+    },
+    {
+      "step": 9,
+      "name": "System Design Interview Vol 1 & 2 (Alex Xu)",
+      "type": "Book",
+      "free": "Paid",
+      "link": "https://bytebytego.com/",
+      "why": "Clear worked examples of common designs.",
+      "time": "ref"
+    },
+    {
+      "step": 9,
+      "name": "ByteByteGo YouTube",
+      "type": "Videos",
+      "free": "Free",
+      "link": "https://www.youtube.com/@ByteByteGo",
+      "why": "Short, visual system-design explainers.",
+      "time": "video"
+    },
+    {
+      "step": 10,
+      "name": "GitHub good-first-issue (etcd)",
+      "type": "Practice",
+      "free": "Free",
+      "link": "https://github.com/etcd-io/etcd/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22",
+      "why": "Find a real issue to fix.",
+      "time": "ongoing"
+    },
+    {
+      "step": 10,
+      "name": "Gophercises",
+      "type": "Practice",
+      "free": "Free",
+      "link": "https://gophercises.com/",
+      "why": "Free Go practice projects for the portfolio.",
+      "time": "ongoing"
+    }
+  ],
+  "quizzes": [
+    {
+      "step": 1,
+      "type": "Theory",
+      "q": "In Go, what is the zero value of an uninitialized slice?",
+      "opts": "A) nil  B) []  C) empty struct  D) 0",
+      "ans": "A",
+      "exp": "An uninitialized slice is nil; len and cap are 0 but you can still append to it."
+    },
+    {
+      "step": 1,
+      "type": "Theory",
+      "q": "What does a pointer receiver method let you do that a value receiver can't?",
+      "opts": "A) Run faster always  B) Modify the original struct  C) Avoid interfaces  D) Skip nil checks",
+      "ans": "B",
+      "exp": "A pointer receiver can mutate the underlying value; a value receiver works on a copy."
+    },
+    {
+      "step": 1,
+      "type": "Theory",
+      "q": "Go handles errors primarily by...",
+      "opts": "A) try/catch  B) returning error values  C) panics everywhere  D) exceptions",
+      "ans": "B",
+      "exp": "Errors are ordinary values returned from functions; panic is for truly exceptional cases."
+    },
+    {
+      "step": 1,
+      "type": "Code",
+      "q": "Write a function `Reverse(s []int) []int` that returns a new reversed slice. Checker: Reverse([1,2,3]) must equal [3,2,1] and the input slice must be unchanged.",
+      "opts": "—",
+      "ans": "see Explanation",
+      "exp": "Loop from len-1 to 0 appending into a new slice (don't mutate input). Verify with a table test comparing output and that the original is intact."
+    },
+    {
+      "step": 1,
+      "type": "Code",
+      "q": "Write `WordCount(s string) map[string]int` counting word frequency. Checker: WordCount(\"go go run\") == {go:2, run:1}.",
+      "opts": "—",
+      "ans": "see Explanation",
+      "exp": "Use strings.Fields to split, loop incrementing the map. Test equality with reflect.DeepEqual."
+    },
+    {
+      "step": 2,
+      "type": "Theory",
+      "q": "What is the average-case time complexity of a hash map lookup?",
+      "opts": "A) O(1)  B) O(log n)  C) O(n)  D) O(n log n)",
+      "ans": "A",
+      "exp": "Average O(1); worst case O(n) under heavy collisions."
+    },
+    {
+      "step": 2,
+      "type": "Theory",
+      "q": "Binary search requires the input to be...",
+      "opts": "A) hashed  B) sorted  C) a linked list  D) unique",
+      "ans": "B",
+      "exp": "Binary search only works on sorted data; it halves the search space each step (O(log n))."
+    },
+    {
+      "step": 2,
+      "type": "Theory",
+      "q": "Which sort is typically O(n log n) worst case AND stable?",
+      "opts": "A) Quicksort  B) Merge sort  C) Bubble sort  D) Selection sort",
+      "ans": "B",
+      "exp": "Merge sort is O(n log n) worst case and stable; quicksort is O(n^2) worst case."
+    },
+    {
+      "step": 2,
+      "type": "Code",
+      "q": "Implement binary search `Search(a []int, target int) int` returning the index or -1. Checker: Search([1,3,5,7], 5)==2; Search([1,3,5],4)==-1.",
+      "opts": "—",
+      "ans": "see Explanation",
+      "exp": "Maintain lo/hi pointers, compute mid, compare. Test found, not-found, and empty slice."
+    },
+    {
+      "step": 2,
+      "type": "Code",
+      "q": "Implement a generic LIFO `Stack[T]` with Push/Pop/Len. Checker: push 1,2,3 then Pop three times yields 3,2,1.",
+      "opts": "—",
+      "ans": "see Explanation",
+      "exp": "Back the stack with a slice; Pop returns last element + shrinks. Use Go generics [T any]."
+    },
+    {
+      "step": 3,
+      "type": "Theory",
+      "q": "Which protocol guarantees ordered, reliable delivery?",
+      "opts": "A) UDP  B) TCP  C) IP  D) DNS",
+      "ans": "B",
+      "exp": "TCP provides ordered, reliable, connection-oriented delivery; UDP does not."
+    },
+    {
+      "step": 3,
+      "type": "Theory",
+      "q": "DNS primarily translates...",
+      "opts": "A) IP to MAC  B) domain names to IP addresses  C) ports to processes  D) HTTP to HTTPS",
+      "ans": "B",
+      "exp": "DNS resolves human-readable domain names into IP addresses."
+    },
+    {
+      "step": 3,
+      "type": "Theory",
+      "q": "An HTTP 4xx status code indicates...",
+      "opts": "A) success  B) redirect  C) client error  D) server error",
+      "ans": "C",
+      "exp": "4xx = client error (e.g. 404 not found); 5xx = server error."
+    },
+    {
+      "step": 3,
+      "type": "Code",
+      "q": "Write a TCP echo server in Go on :9000 that returns whatever the client sends. Checker: connect, send 'hi', receive 'hi'.",
+      "opts": "—",
+      "ans": "see Explanation",
+      "exp": "net.Listen('tcp',':9000'), Accept in a loop, io.Copy(conn, conn) per connection in a goroutine."
+    },
+    {
+      "step": 4,
+      "type": "Theory",
+      "q": "Which HTTP method is expected to be idempotent and safe (no side effects)?",
+      "opts": "A) POST  B) GET  C) PATCH  D) DELETE",
+      "ans": "B",
+      "exp": "GET should be safe and idempotent; POST creates and is generally not idempotent."
+    },
+    {
+      "step": 4,
+      "type": "Theory",
+      "q": "Why use parameterized queries instead of string concatenation in SQL?",
+      "opts": "A) Faster  B) Prevents SQL injection  C) Shorter code  D) Avoids migrations",
+      "ans": "B",
+      "exp": "Parameterized queries separate code from data, preventing SQL injection."
+    },
+    {
+      "step": 4,
+      "type": "Theory",
+      "q": "Passwords should be stored as...",
+      "opts": "A) plain text  B) reversible encryption  C) a salted hash (bcrypt/argon2)  D) base64",
+      "ans": "C",
+      "exp": "Use a slow salted hash like bcrypt/argon2 — never plaintext or reversible encryption."
+    },
+    {
+      "step": 4,
+      "type": "Code",
+      "q": "Build an Echo route GET /health that returns JSON {\"status\":\"ok\"} with 200. Checker: response body and status code.",
+      "opts": "—",
+      "ans": "see Explanation",
+      "exp": "e.GET('/health', func(c){ return c.JSON(200, map[string]string{\"status\":\"ok\"}) })."
+    },
+    {
+      "step": 4,
+      "type": "Code",
+      "q": "Add a POST /bookmarks route that validates a required 'url' field and returns 400 if missing. Checker: missing url => 400.",
+      "opts": "—",
+      "ans": "see Explanation",
+      "exp": "Bind to a struct with `validate:\"required,url\"`, use Echo's validator, return c.JSON(400,...) on error."
+    },
+    {
+      "step": 5,
+      "type": "Theory",
+      "q": "What does an unbuffered channel send block on?",
+      "opts": "A) Nothing  B) Until a receiver is ready  C) Until the buffer fills  D) Until GC runs",
+      "ans": "B",
+      "exp": "An unbuffered send blocks until another goroutine is ready to receive."
+    },
+    {
+      "step": 5,
+      "type": "Theory",
+      "q": "The Go race detector is enabled with...",
+      "opts": "A) go run -race  B) go vet  C) go fmt  D) GODEBUG=gc",
+      "ans": "A",
+      "exp": "Build/run/test with -race to detect data races at runtime."
+    },
+    {
+      "step": 5,
+      "type": "Theory",
+      "q": "What is the main purpose of context.Context?",
+      "opts": "A) Logging  B) Carrying cancellation/deadlines across API boundaries  C) Dependency injection  D) Storing config",
+      "ans": "B",
+      "exp": "context propagates cancellation, deadlines, and request-scoped values across goroutines/calls."
+    },
+    {
+      "step": 5,
+      "type": "Code",
+      "q": "Write a worker pool: N workers consume jobs from a channel and send results to another. Checker: all jobs processed exactly once, clean shutdown via close().",
+      "opts": "—",
+      "ans": "see Explanation",
+      "exp": "Start N goroutines ranging over the jobs channel; use sync.WaitGroup; close jobs to signal done; collect results."
+    },
+    {
+      "step": 5,
+      "type": "Code",
+      "q": "Implement a token-bucket rate limiter Allow() bool that permits R requests/sec. Checker: more than R calls in a second return false.",
+      "opts": "—",
+      "ans": "see Explanation",
+      "exp": "Use a buffered channel or a mutex + time-based refill (time.Ticker). Guard state with a mutex; test by hammering Allow()."
+    },
+    {
+      "step": 6,
+      "type": "Theory",
+      "q": "The 'I' in ACID stands for...",
+      "opts": "A) Integrity  B) Isolation  C) Indexing  D) Idempotency",
+      "ans": "B",
+      "exp": "Isolation: concurrent transactions don't interfere as if run serially (per isolation level)."
+    },
+    {
+      "step": 6,
+      "type": "Theory",
+      "q": "A database index primarily improves...",
+      "opts": "A) write speed  B) read/lookup speed  C) storage size  D) backup speed",
+      "ans": "B",
+      "exp": "Indexes speed reads/lookups at the cost of extra storage and slower writes."
+    },
+    {
+      "step": 6,
+      "type": "Theory",
+      "q": "PostgreSQL uses which technique to allow readers not to block writers?",
+      "opts": "A) Table locks  B) MVCC  C) Two-phase commit  D) Sharding",
+      "ans": "B",
+      "exp": "MVCC (multi-version concurrency control) keeps row versions so readers don't block writers."
+    },
+    {
+      "step": 6,
+      "type": "Code",
+      "q": "Wrap a two-step transfer (debit + credit) in a single SQL transaction in Go. Checker: if the credit fails, the debit is rolled back.",
+      "opts": "—",
+      "ans": "see Explanation",
+      "exp": "tx, _ := db.Begin(); on any error tx.Rollback(); else tx.Commit(). Test by forcing the second statement to fail."
+    },
+    {
+      "step": 7,
+      "type": "Theory",
+      "q": "CAP theorem says during a network partition you must choose between...",
+      "opts": "A) Cost and Performance  B) Consistency and Availability  C) Caching and Persistence  D) CPU and Memory",
+      "ans": "B",
+      "exp": "Under a partition (P) you trade off Consistency vs Availability."
+    },
+    {
+      "step": 7,
+      "type": "Theory",
+      "q": "In Raft, how is a leader chosen?",
+      "opts": "A) Lowest IP wins  B) Election with majority votes per term  C) Random forever  D) The first node started",
+      "ans": "B",
+      "exp": "Candidates request votes; a node winning a majority in a term becomes leader."
+    },
+    {
+      "step": 7,
+      "type": "Theory",
+      "q": "Asynchronous replication risks...",
+      "opts": "A) lower availability  B) data loss / stale reads on failover  C) higher write latency  D) stronger consistency",
+      "ans": "B",
+      "exp": "Async replication can lose recently-acked writes if the leader fails before replicas catch up."
+    },
+    {
+      "step": 7,
+      "type": "Theory",
+      "q": "Linearizability means...",
+      "opts": "A) operations run in a single line of code  B) the system behaves as if there's one copy, operations atomic & in real-time order  C) data is stored linearly  D) O(n) access",
+      "ans": "B",
+      "exp": "Linearizability = strongest single-object consistency: appears as one up-to-date copy."
+    },
+    {
+      "step": 7,
+      "type": "Theory",
+      "q": "Partitioning (sharding) is mainly used to...",
+      "opts": "A) improve security  B) scale data/throughput beyond one node  C) reduce code  D) guarantee consistency",
+      "ans": "B",
+      "exp": "Sharding spreads data across nodes so the dataset/throughput exceeds a single machine."
+    },
+    {
+      "step": 8,
+      "type": "Code",
+      "q": "6.824 Lab 2A: implement Raft leader election. Checker: with 3 peers, exactly one leader is elected and re-elected after the leader is killed.",
+      "opts": "—",
+      "ans": "see Explanation",
+      "exp": "Implement RequestVote RPC, election timeouts, terms, heartbeats (AppendEntries). Run the provided test suite go test -run 2A."
+    },
+    {
+      "step": 8,
+      "type": "Code",
+      "q": "Build a replicated KV store: Put/Get/Append routed through Raft. Checker: a value Put on the leader is readable after a follower takes over.",
+      "opts": "—",
+      "ans": "see Explanation",
+      "exp": "Apply committed log entries to a state machine map; clients retry on wrong-leader; dedupe with request IDs."
+    },
+    {
+      "step": 8,
+      "type": "Theory",
+      "q": "Why must Raft commit an entry only once it's on a majority?",
+      "opts": "A) Speed  B) To guarantee durability across leader changes  C) To save memory  D) To avoid sharding",
+      "ans": "B",
+      "exp": "A majority guarantees any future leader's log contains the entry, preserving safety."
+    },
+    {
+      "step": 9,
+      "type": "Theory",
+      "q": "The first step in a system-design interview should be...",
+      "opts": "A) pick a database  B) clarify requirements & constraints  C) draw servers  D) estimate cost",
+      "ans": "B",
+      "exp": "Always clarify functional/non-functional requirements and scale before designing."
+    },
+    {
+      "step": 9,
+      "type": "Theory",
+      "q": "To scale a read-heavy service, a common first move is...",
+      "opts": "A) shard writes  B) add caching + read replicas  C) drop the database  D) use UDP",
+      "ans": "B",
+      "exp": "Caching and read replicas absorb read load cheaply before more complex sharding."
+    },
+    {
+      "step": 9,
+      "type": "Theory",
+      "q": "For proximity matching (like Lokatalent), a useful technique is...",
+      "opts": "A) full table scan  B) geospatial indexing / geohashing  C) JWT  D) round-robin DNS",
+      "ans": "B",
+      "exp": "Geohashing / spatial indexes (PostGIS, S2) let you query 'nearby' efficiently."
+    },
+    {
+      "step": 10,
+      "type": "Theory",
+      "q": "The strongest signal of distributed-systems skill to an employer is...",
+      "opts": "A) a long CV  B) a working Raft implementation / merged OSS PR  C) certificates  D) knowing buzzwords",
+      "ans": "B",
+      "exp": "Demonstrated, inspectable work (running code, real contributions) beats claims every time."
+    }
+  ],
+  "phases": {
+    "1": "Go fundamentals",
+    "2": "Data structures & algorithms",
+    "3": "How computers & networks work",
+    "4": "Build real backend APIs",
+    "5": "Concurrency in Go",
+    "6": "Databases, deep",
+    "7": "Distributed systems theory",
+    "8": "Build distributed systems",
+    "9": "System design",
+    "10": "Visible proof & job hunt"
+  }
+}

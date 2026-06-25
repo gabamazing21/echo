@@ -1,0 +1,46 @@
+[
+  {
+    "slug": "iq-tcpecho-graceful-shutdown",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Design graceful shutdown for a goroutine-per-connection TCP server. On SIGTERM, what must happen so in-flight work isn't lost?",
+    "companies": "Systems / infra interviews",
+    "source_name": "Go pkg — os/signal (NotifyContext) & net.Listener",
+    "source_url": "https://pkg.go.dev/os/signal#NotifyContext",
+    "model_answer": "Goal: **stop accepting new connections, let in-flight ones drain, then exit** — with a deadline so a stuck connection can't block forever.\n\n1. Catch the signal with `signal.NotifyContext(ctx, SIGINT, SIGTERM)`.\n2. On cancel, **close the listener** — `Accept()` then returns an error and the loop exits; no new connections.\n3. **Track live connections** with a `sync.WaitGroup` (`Add` per accepted conn, `Done` in the handler).\n4. Wait for the group, but bounded by a timeout; after it, force-close remaining conns.\n\n```go\nctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)\ndefer stop()\ngo func(){ <-ctx.Done(); ln.Close() }()\nfor {\n    c, err := ln.Accept()\n    if err != nil { break } // listener closed\n    wg.Add(1)\n    go func(){ defer wg.Done(); handle(c) }()\n}\nwg.Wait() // drain in-flight\n```\n\nKey signals interviewers want: distinguishing *stop accepting* from *finish existing*, and a hard timeout so shutdown can't hang.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-tcpecho-read-write-deadlines",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "A client connects, sends nothing, and never closes. What happens to your goroutine-per-connection server, and how do read/write deadlines fix it?",
+    "companies": "Systems / infra interviews",
+    "source_name": "Go pkg — net.Conn SetReadDeadline / SetDeadline",
+    "source_url": "https://pkg.go.dev/net#Conn",
+    "model_answer": "A blocking `Read` waits forever, so that goroutine and its connection **leak** — one idle/malicious client per goroutine, and enough of them exhaust memory and FDs (a slowloris-style DoS). The fix is **deadlines**: `conn.SetReadDeadline(time.Now().Add(d))` makes a stalled `Read` return a timeout error (check `err.(net.Error).Timeout()`), so you can close and reclaim. Refresh it after each successful read for an *idle* timeout; set a `WriteDeadline` so a slow/blocked reader can't wedge your writer.\n\n```go\nfor {\n    conn.SetReadDeadline(time.Now().Add(30 * time.Second))\n    n, err := conn.Read(buf)\n    if err != nil { return } // timeout, EOF, or reset -> clean up\n    conn.SetWriteDeadline(time.Now().Add(10 * time.Second))\n    conn.Write(buf[:n])\n}\n```\n\nDeadlines are **absolute times**, not durations — you re-arm them each iteration. This is *the* defense against resource exhaustion from misbehaving peers.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-tcpecho-c10k-scaling",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Your goroutine-per-connection echo server handles 10k connections fine. Where does the model break at 100k–1M, and what would you change?",
+    "companies": "Systems / infra interviews",
+    "source_name": "Dave Cheney — Performance without the event loop",
+    "source_url": "https://dave.cheney.net/2015/08/08/performance-without-the-event-loop",
+    "model_answer": "This is the **C10k → C1M** question. Go's model scales surprisingly far because the runtime parks blocked goroutines on a **netpoller (epoll/kqueue)** so a blocked read costs no OS thread — goroutine-per-conn *is* the idiomatic answer up to ~100k+. But limits appear:\n\n- **Memory** — even ~2–8 KB per goroutine × 1M = gigabytes of stacks plus read buffers; pool/shrink buffers, cap connection count.\n- **File descriptors** — raise `ulimit -n`; each conn is an FD.\n- **Scheduler / GC pressure** — millions of goroutines and short-lived allocations stress the scheduler and GC; reuse buffers (`sync.Pool`), avoid per-read allocation.\n- **Accept throughput / load balancing** — single accept loop, `SO_REUSEPORT` with multiple listeners, kernel tuning (somaxconn, ephemeral ports).\n\nOnly at extreme scale do you reach for an explicit **event-loop / readiness** design (à la `gnet`) to cut per-goroutine memory. Interview signal: defend goroutine-per-conn first, then name the real bottlenecks (memory, FDs, GC) and concrete mitigations.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-tcpecho-buffer-message-framing",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Your echo server reads with conn.Read into a buffer. Why might one Read return half a message — or two messages at once? What's the fix?",
+    "companies": "Common Go interviews",
+    "source_name": "Beej's Guide to Network Programming",
+    "source_url": "https://beej.us/guide/bgnet/html/#sonsendto-talk-to-me-baby",
+    "model_answer": "TCP is a **byte stream, not a message protocol** — it preserves order but has **no concept of message boundaries**. The OS delivers whatever bytes have arrived, so one `Read` may return a partial message, exactly one, or several concatenated, depending on segmentation, Nagle, and timing. Assuming `Read` == one message is a classic bug.\n\nThe fix is **framing** at the application layer:\n\n- **Delimiter-based** — e.g. newline-terminated; use `bufio.Scanner` / `ReadString('\\n')` to accumulate until the delimiter.\n- **Length-prefixed** — write a fixed-size length header, then read *exactly* that many bytes with `io.ReadFull`.\n\n```go\nsc := bufio.NewScanner(conn) // splits on '\\n' by default\nfor sc.Scan() { conn.Write(append(sc.Bytes(), '\\n')) }\n```\n\nA raw `io.Copy(conn, conn)` works for echo *because* it doesn't care about boundaries — but any real protocol (Redis, HTTP, RPC) must define framing.",
+    "challenge_slug": ""
+  }
+]

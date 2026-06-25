@@ -1,0 +1,49 @@
+# Binaries
+consensus-server
+consensus
+*.exe
+*.exe~
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Test binaries
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.iml
+
+# Env
+.env
+.env.local
+
+# Database
+*.db
+
+# Logs
+*.log
+
+# Temp
+tmp/
+/tmp

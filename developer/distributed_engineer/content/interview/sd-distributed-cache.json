@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-dc-design",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Design a distributed cache (Redis/Memcached-style cluster): key→value, low latency, scalable, tolerant of node loss.",
+    "companies": "Amazon, Meta, infra interviews",
+    "source_name": "System Design Primer — Cache",
+    "source_url": "https://github.com/donnemartin/system-design-primer#cache",
+    "model_answer": "In-memory K→V across nodes. Distribute keys with **consistent hashing + virtual nodes** so adding/losing a node remaps only ~1/N of keys (not all). Bound memory with an **eviction policy** (LRU default; LFU for skew; TTL). Choose a write policy — **cache-aside** (lazy load on miss, invalidate on write) is the common default. It's a cache, so data loss is acceptable (reconstructable from the source of truth), which simplifies durability. Then discuss failure modes: stampede, penetration, cold start, hot keys (below)."
+  },
+  {
+    "slug": "iq-dc-stampede",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "A popular cached key expires and thousands of requests miss at once, all hitting the DB. What happens and how do you prevent it?",
+    "companies": "Backend / infra interviews",
+    "source_name": "System Design Primer — Cache",
+    "source_url": "https://github.com/donnemartin/system-design-primer#cache",
+    "model_answer": "That's a **cache stampede / thundering herd** — the DB gets a synchronized flood and can topple. Fixes: **single-flight / locking** so only one request recomputes the value while others wait for it; **staggered TTLs** (add jitter) so keys don't all expire together; or **refresh-ahead** (asynchronously recompute hot keys before they expire). Related failure modes worth naming: **penetration** (queries for non-existent keys bypass the cache — cache negatives or use a Bloom filter) and **cold start** (warm the cache / rate-limit DB fallback)."
+  },
+  {
+    "slug": "iq-dc-invalidation",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Cache-aside vs write-through vs write-back, and why is invalidation the hard part?",
+    "companies": "Backend / infra interviews",
+    "source_name": "System Design Primer — Cache",
+    "source_url": "https://github.com/donnemartin/system-design-primer#cache",
+    "model_answer": "**Cache-aside**: app loads on miss and invalidates the key on write — simple, common. **Write-through**: write cache+DB together — always fresh, slower writes. **Write-back**: write cache, flush to DB later — fast but risks loss on crash (rare for durable data). Invalidation is hard because the cache and DB can drift: a write that updates the DB but fails to invalidate leaves a stale read served indefinitely. Mitigate with invalidate-on-write + short TTLs, and accept that perfect cache/DB consistency is its own distributed problem."
+  }
+]

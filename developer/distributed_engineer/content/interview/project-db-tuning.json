@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-tune-unused-indexes",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "You inherit a table with 20 indexes, some redundant. How do you safely find and drop the unused ones?",
+    "companies": "Backend / DB interviews",
+    "source_name": "PostgreSQL — Monitoring Stats (pg_stat_user_indexes)",
+    "source_url": "https://www.postgresql.org/docs/current/monitoring-stats.html",
+    "model_answer": "Query `pg_stat_user_indexes` for `idx_scan = 0` (never used since stats reset) — candidates to drop after observing a full traffic cycle (don't trust a short window; some indexes serve month-end jobs). Also spot **redundant** indexes: an index on `(a)` is covered by `(a,b)`'s leftmost prefix. Drop with `DROP INDEX CONCURRENTLY` to avoid locking. Each removed index speeds up writes and saves space. Caveat: a unique index also enforces a constraint — don't drop those for 'unused' reasons."
+  },
+  {
+    "slug": "iq-tune-nplus1",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Your endpoint loads 50 bookmarks then fires one query per bookmark to fetch its owner. Name the anti-pattern and the fixes.",
+    "companies": "Backend / DB interviews",
+    "source_name": "Use The Index, Luke! — N+1",
+    "source_url": "https://use-the-index-luke.com/",
+    "model_answer": "The **N+1 query problem**: 1 query for the list + N for each child = 51 round trips. Fixes: a single **JOIN** (fetch bookmarks with owners in one query), or fetch the list then one batched query `WHERE owner_id = ANY($1)` and stitch in app, or use `IN (...)`. ORMs hide this; always check the query count. The signal: recognize the pattern instantly and collapse N round trips into 1–2. This is one of the most common real-world performance bugs."
+  },
+  {
+    "slug": "iq-tune-txn-integrity",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Write a transaction that creates a bookmark AND decrements the user's remaining-quota counter, and prove both happen or neither.",
+    "companies": "Backend / DB interviews",
+    "source_name": "PostgreSQL — Transactions",
+    "source_url": "https://www.postgresql.org/docs/current/tutorial-transactions.html",
+    "model_answer": "Wrap both writes in one tx with the deferred-rollback idiom:\n\n```go\ntx, _ := pool.Begin(ctx); defer tx.Rollback(ctx)\nif _, err := tx.Exec(ctx, insertBookmark, ...); err != nil { return err }\nif _, err := tx.Exec(ctx, `UPDATE users SET quota = quota - 1 WHERE id=$1 AND quota > 0`, uid); err != nil { return err }\nreturn tx.Commit(ctx)\n```\n\nProve it: a test that forces the 2nd statement to fail and asserts the bookmark row was NOT inserted. Bonus: the `AND quota > 0` guard + `RowsAffected()==0` enforces the quota atomically (no lost update)."
+  }
+]

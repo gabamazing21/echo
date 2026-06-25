@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-gor-leak-pprof",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "What is a goroutine leak, what causes it, and how do you find one in a running service?",
+    "companies": "Go / backend interviews",
+    "source_name": "Go docs — pprof",
+    "source_url": "https://pkg.go.dev/net/http/pprof",
+    "model_answer": "A goroutine that blocks forever (e.g. sends on a channel nobody receives, or waits on a ctx that's never cancelled) never dies — its stack and captured memory pile up until OOM. Common causes: forgetting to `close` a channel a worker ranges over, no `select` on `ctx.Done()`, or a producer outliving its consumer. Detect with `net/http/pprof`: `runtime.NumGoroutine()` trending up, and the `/debug/pprof/goroutine` profile shows thousands stuck on the same line. Fix by giving every goroutine a guaranteed exit (close + ctx)."
+  },
+  {
+    "slug": "iq-gor-gomaxprocs",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "What's the difference between GOMAXPROCS and the number of goroutines? When would you change GOMAXPROCS?",
+    "companies": "Go / infra interviews",
+    "source_name": "Go runtime docs",
+    "source_url": "https://pkg.go.dev/runtime#GOMAXPROCS",
+    "model_answer": "Goroutines are concurrency (how many independent tasks exist — can be millions); GOMAXPROCS is parallelism (how many run on OS threads simultaneously, default = #cores). The M:N scheduler multiplexes goroutines onto GOMAXPROCS threads. You rarely change it, but: lower it to bound CPU for a latency-sensitive co-tenant; in **containers**, the runtime historically saw host cores not the cgroup quota, so set it to the CPU limit (or use `automaxprocs`) to avoid throttling and excessive context switching."
+  },
+  {
+    "slug": "iq-gor-print-in-order",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Print in Order: three threads call first(), second(), third() in any order — force the output to be 'firstsecondthird'.",
+    "companies": "Amazon, Microsoft",
+    "source_name": "LeetCode #1114",
+    "source_url": "https://leetcode.com/problems/print-in-order/",
+    "model_answer": "Classic synchronization warm-up. Use two channels (or two `sync.Mutex`/`WaitGroup`) as gates: `second` waits on a signal from `first`, `third` waits on a signal from `second`.\n\n```go\ntype Foo struct{ a, b chan struct{} }\nfunc (f *Foo) first(p func()){ p(); close(f.a) }\nfunc (f *Foo) second(p func()){ <-f.a; p(); close(f.b) }\nfunc (f *Foo) third(p func()){ <-f.b; p() }\n```\n\nThe lesson: enforce ordering with happens-before signals (channel/WaitGroup), never `time.Sleep`."
+  },
+  {
+    "slug": "iq-gor-bottleneck",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "10,000 concurrent requests hit your service and it's slow. Goroutines are cheap — where's the bottleneck likely to be, and how do you find it?",
+    "companies": "Backend / infra interviews",
+    "source_name": "Go blog — Profiling Go Programs",
+    "source_url": "https://go.dev/blog/pprof",
+    "model_answer": "Goroutines themselves rarely saturate; the bottleneck is usually a *shared* resource: the DB connection pool (requests queue for connections), a mutex under contention, a downstream API, or GC/allocation pressure. Profile, don't guess: CPU profile (`pprof`) for hot paths, block/mutex profiles for contention, the goroutine profile for leaks, and DB pool stats for saturation. The interview signal: you reach for measurement and name the shared bottleneck, not 'add more goroutines'."
+  }
+]

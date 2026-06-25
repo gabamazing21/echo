@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-sd-chat-design",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Design a chat system like WhatsApp/Messenger (1:1 + group, online/offline delivery, ordering). Walk the full framework.",
+    "companies": "Meta, Amazon, well-known SD prompt",
+    "source_name": "ByteByteGo — Design a Chat System",
+    "source_url": "https://bytebytego.com/courses/system-design-interview/design-a-chat-system",
+    "model_answer": "Requirements: 1:1 + group, delivery receipts, presence, ordering, history, scale ~50M DAU. Core: persistent **WebSocket** connections to a stateless gateway tier; a **session registry** (user→gateway, in Redis) so a sender's message routes to the recipient's gateway. Messages persist in a store **partitioned by conversation_id** with a per-conversation **sequence number** for ordering. Offline users get an **offline queue**; on reconnect they pull missed messages by last-seen seq. Group fan-out: small groups fan-out-on-write to each member's inbox; huge groups fan-out-on-read. Push via APNs/FCM when disconnected. Trade-offs: per-conversation (not global) ordering; at-least-once delivery + client dedup by message id. Discuss the registry as a SPOF and connection count as the real bottleneck."
+  },
+  {
+    "slug": "iq-sd-chat-offline-sync",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "A user is offline, receives 100 messages, then opens the app on a flaky network. How do they get all 100 with none missed or duplicated, even if the sync drops midway?",
+    "companies": "Meta, Signal, messaging interviews",
+    "source_name": "System Design Primer",
+    "source_url": "https://github.com/donnemartin/system-design-primer",
+    "model_answer": "Make sync **resumable and idempotent**. The client persists the last contiguous sequence number it has per conversation; on connect it requests `messages WHERE conv_id=X AND seq > last`. The server streams in seq order; the client acks the highest contiguous seq it stored. If the connection drops, it resumes from its stored cursor — no gaps. Dedup by stable message id (so a re-delivered message is dropped). Deliver in pages so a flaky link makes progress. The principles: durable server-side log + monotonic per-conversation cursor + idempotent apply = exactly-once *effect* over an at-least-once channel."
+  },
+  {
+    "slug": "iq-sd-chat-presence",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Show 'which of my 500 friends are online' without polling 500 gateways, and handle 'typing…' without false positives on a flaky link.",
+    "companies": "Meta, messaging interviews",
+    "source_name": "ByteByteGo — Chat System (presence)",
+    "source_url": "https://bytebytego.com/courses/system-design-interview/design-a-chat-system",
+    "model_answer": "Presence is high-churn, low-value state — keep it out of the durable DB. Each gateway writes a heartbeat to a presence store (Redis) with a **short TTL**; 'online' = key exists. To answer 'who of my friends is online', read those keys (or subscribe to a pub/sub presence channel) rather than polling gateways. 'Typing' is ephemeral: send a typing event with a ~5s client-side expiry, refreshed while typing — so a dropped connection lets it lapse instead of sticking. Don't persist presence; reconcile on reconnect. Trade-off: presence is best-effort/eventually-consistent, which is acceptable for the feature."
+  },
+  {
+    "slug": "iq-sd-chat-ordering",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Why per-conversation ordering and not a single global order? What breaks if you try global ordering?",
+    "companies": "Distributed / messaging interviews",
+    "source_name": "System Design Primer",
+    "source_url": "https://github.com/donnemartin/system-design-primer",
+    "model_answer": "Within one conversation, messages must appear in a consistent order for all members — achieved with a **per-conversation sequence** (the conversation is the consistency boundary, so it can live on one partition/leader). A single **global** order across all conversations would require a global sequencer/consensus on every message — a massive throughput bottleneck and pointless, since users only perceive order *within* a chat. So you shard by conversation_id and order locally. The trade-off surfaces in a 'unified inbox sorted by time' view: you merge per-conversation streams by timestamp client-side, accepting minor cross-conversation skew."
+  }
+]

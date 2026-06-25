@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "iq-url-design-shortener",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Design a URL shortener (TinyURL / bit.ly). Follow-up: how do you generate short codes, and how do you guarantee uniqueness at 100M creates/day?",
+    "companies": "System design interviews",
+    "source_name": "ByteByteGo — Design A URL Shortener",
+    "source_url": "https://bytebytego.com/courses/system-design-interview/design-a-url-shortener",
+    "model_answer": "Requirements: shorten a long URL, redirect a short code to it; read-heavy. Estimate: assume 100M creates/day ≈ 1.2k writes/s, reads at ~100:1 ≈ 116k reads/s — design for the reads. Base62 with 7 chars gives 62^7 ≈ 3.5T codes, decades of runway. API: POST /shorten → {short}; GET /{code} → 301/302. Data: code (PK) → long_url, a single point lookup. Code generation, three options: (A) hash + truncate (stateless, but must check for and resolve collisions on the write path); (B) counter + base62 (collision-free by construction, but a hot counter SPOF and sequential/guessable codes); (C) a key-generation service that pre-mints unique random codes offline (no write-path collision check, not sequential). Recommend starting with the counter as the simple baseline, then propose the KGS when pushed on bottleneck and guessability. Scale: cache hot codes, read replicas, CDN-cache 301 redirects, shard by code. Trade-offs: 301 vs 302, eventual consistency (AP), counter vs KGS."
+  },
+  {
+    "slug": "iq-url-collision-probability",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "If you generate codes by truncating a hash to 7 base62 chars, what's the collision story, and how do you handle it on the write path?",
+    "companies": "System design interviews",
+    "source_name": "System Design Primer — Design Pastebin.com (or Bit.ly)",
+    "source_url": "https://github.com/donnemartin/system-design-primer/blob/master/solutions/system_design/pastebin/README.md",
+    "model_answer": "Truncating a hash maps an enormous input space into 62^7 ≈ 3.5T slots, so by the birthday paradox collisions become non-negligible well before the space fills — you'll see clashes after roughly the square root (~millions) of entries, not billions. So you *cannot* assume uniqueness: on every create you must read the DB to check whether the candidate code already maps to a *different* URL, and on a clash re-hash with a salt or take more characters. That extra read on the write path is the real cost of the hash approach. The cleaner alternatives remove the check entirely: a counter+base62 scheme is unique by construction, and a key-generation service hands out codes already known to be unused. Mention that same-URL→same-code is a feature of hashing (free dedup) but the collision check is what makes it less attractive than a KGS at scale. The senior point: quantify the collision risk, don't hand-wave 'hashes are unique.'"
+  },
+  {
+    "slug": "iq-url-301-vs-302",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Should a redirect return 301 or 302? Follow-up: which one breaks click analytics, and why?",
+    "companies": "System design interviews",
+    "source_name": "ByteByteGo — Design A URL Shortener",
+    "source_url": "https://bytebytego.com/courses/system-design-interview/design-a-url-shortener",
+    "model_answer": "301 is a *permanent* redirect: browsers and CDNs cache it aggressively, so repeat clicks skip your servers entirely — fastest and cheapest, and edge-cacheable. The cost: because the client caches the mapping, subsequent clicks never reach you, so you *lose per-click analytics* and can't easily change the target later. 302 is *temporary*: the client re-requests the short URL each time, so every click hits your service — you can count clicks and re-point the link, at the price of more load and latency. The framing interviewers want: it's a trade-off between edge-cacheable performance (301) and click tracking / editability (302). For a pure, immutable shortener that doesn't need analytics, 301 wins; if analytics or mutable targets matter, choose 302 (or 302 + a fast async analytics pipeline). State the trade-off explicitly rather than just picking one — that's the scored behavior."
+  },
+  {
+    "slug": "iq-url-enumeration-security",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "A counter+base62 scheme produces sequential codes (b, c, d, ...). What can an attacker do, and how do you defend?",
+    "companies": "System design interviews",
+    "source_name": "ByteByteGo — Design A URL Shortener",
+    "source_url": "https://bytebytego.com/courses/system-design-interview/design-a-url-shortener",
+    "model_answer": "Sequential codes are *enumerable*: an attacker can walk 1, 2, 3 → b, c, d and scrape every link ever created, harvesting private or unlisted URLs and inferring your total volume and growth rate from the highest code seen. Two problems — confidentiality (links meant to be unguessable aren't) and information leakage (the counter reveals business metrics). Defenses: (1) don't expose the raw counter — run it through a reversible permutation (e.g. Feistel/Hashids) so codes look random but stay unique; (2) use a key-generation service that mints non-sequential random codes; (3) add a longer code space so brute-force enumeration is infeasible; (4) rate-limit and detect scanning at the edge; (5) for truly private links, require auth rather than relying on obscurity. The interview point: 'collision-free' (a property of the counter) is not the same as 'unguessable' (a security property), and senior candidates call out that distinction unprompted."
+  },
+  {
+    "slug": "iq-url-resharding",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "You sharded by hash(code) across N database nodes. Now you must add nodes. What happens to existing keys, and how do you avoid a full reshuffle?",
+    "companies": "System design interviews",
+    "source_name": "System Design Primer — Consistent hashing",
+    "source_url": "https://github.com/donnemartin/system-design-primer#under-development",
+    "model_answer": "With plain hash(code) mod N, changing N remaps almost every key, forcing a massive data movement and a cache-miss storm while it happens. The standard fix is consistent hashing: place nodes and keys on a hash ring so adding/removing a node only relocates the keys in the affected arc — roughly 1/N of the data — instead of everything. Add virtual nodes so each physical node owns many small ring segments, smoothing load and shrinking the moved fraction further. During the move, double-write or backfill so reads stay correct, and warm caches to avoid a thundering herd against the new node. Alternative: pre-shard into many logical partitions up front and just reassign whole partitions to new physical nodes (the 'lots of small shards' approach), which makes rebalancing a metadata change rather than a rehash. The takeaway: choose a sharding scheme that makes growth a bounded, online operation — naming mod-N as the trap and consistent hashing as the cure is the expected answer."
+  }
+]

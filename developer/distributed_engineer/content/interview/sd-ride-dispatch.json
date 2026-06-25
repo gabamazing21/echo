@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-sd-ride-design",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Design ride dispatch / proximity matching (Uber/Lyft): drivers stream location, match a rider to the nearest available driver in <1s at city scale.",
+    "companies": "Uber, Lyft, well-known SD prompt",
+    "source_name": "ByteByteGo — Proximity Service / Uber",
+    "source_url": "https://bytebytego.com/courses/system-design-interview/design-a-location-based-service",
+    "model_answer": "Requirements: ~hundreds of k location pings/sec, sub-second 'nearest available driver', live trip tracking. Pipeline: a **location ingest** tier writes driver pings to an in-memory **geospatial index** (latest position per driver, with TTL). Index by **geohash / S2 / H3** cells so 'nearby' = look up the rider's cell + 8 neighbors. **Shard by geo-cell** for locality (and to scale writes), with adaptive granularity in dense areas. Matching service queries the cell, ranks candidates (distance/ETA), and **atomically locks** the chosen driver (compare-and-set) so two riders don't grab the same one. Trade-offs: cell size (recall vs fan-out), location freshness vs write load (coalesce/throttle pings), and consistency (a brief double-offer is recoverable). Surge = demand/supply ratio per cell."
+  },
+  {
+    "slug": "iq-sd-ride-geohash-vs-s2",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Geohash vs quadtree vs S2/H3 for the location index — what are the trade-offs, and which would you start with?",
+    "companies": "Uber, Google Maps, geo interviews",
+    "source_name": "Uber Engineering — H3",
+    "source_url": "https://www.uber.com/blog/h3/",
+    "model_answer": "**Geohash**: encode lat/long to a string; shared prefix ≈ nearby, so it's a simple prefix index — but fixed cell sizes and boundary artifacts (two close points across a cell edge differ in prefix). **Quadtree**: adapts resolution to density (deeper where dense) but needs tree maintenance/rebalancing. **S2 (Google) / H3 (Uber, hexagons)**: hierarchical cells with good neighbor properties; hexagons (H3) have uniform adjacency (no corner ambiguity). Start with **geohash** for simplicity; move to S2/H3 when hot dense cells and boundary issues bite. Always query the cell **plus neighbors** to handle riders near an edge."
+  },
+  {
+    "slug": "iq-sd-ride-ingest-backpressure",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Location ingest receives 250k pings/sec and is falling behind; the write queue is backing up. What do you do first?",
+    "companies": "Uber, high-throughput interviews",
+    "source_name": "Kafka docs — design / backpressure",
+    "source_url": "https://kafka.apache.org/documentation/#design",
+    "model_answer": "First define the SLO: locations only need to be a few seconds fresh, so **stale pings are worthless** — drop/coalesce rather than queue them. Tactics: keep only the **latest** position per driver (overwrite, don't append), **sample/throttle** ping frequency, batch writes, and put a bounded buffer in front so producers get backpressure instead of unbounded memory growth. Scale horizontally by **sharding ingest by geo-cell**. Decouple with a log (Kafka) sized for bursts, with consumers that skip to newest. The key insight: for ephemeral telemetry, **load-shedding the old data is correct**, unlike durable order data where you must not drop."
+  },
+  {
+    "slug": "iq-sd-ride-driver-lock",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Two riders' requests target the same nearest driver at the same instant. Exactly one must get them. How?",
+    "companies": "Uber, concurrency / SD interviews",
+    "source_name": "System Design Primer",
+    "source_url": "https://github.com/donnemartin/system-design-primer",
+    "model_answer": "Make the claim atomic, not first-come in app code. A **compare-and-set** on the driver's state — `UPDATE drivers SET state='matched', trip_id=$t WHERE id=$d AND state='available'` — one request affects 1 row and wins; the loser sees 0 rows affected and re-queries for the next-nearest driver. (Equivalently a distributed lock / atomic op in Redis.) Set a short reservation TTL so a rider who never confirms releases the driver. This is the lost-update problem (Step 6) and the distributed-lock problem (Step 8) in a product setting: the DB/atomic op is the arbiter, and the loser retries rather than erroring."
+  }
+]

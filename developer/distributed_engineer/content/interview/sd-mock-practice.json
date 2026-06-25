@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "iq-sd-mock-rate-limiter",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Design a distributed rate limiter for an API gateway (e.g. 100 req/min per API key across many servers).",
+    "companies": "Stripe, Cloudflare, well-known SD prompt",
+    "source_name": "System Design Primer / Stripe blog",
+    "source_url": "https://stripe.com/blog/rate-limiters",
+    "model_answer": "Centralize counters in Redis with an atomic token-bucket or sliding-window-counter Lua script keyed per API key, so all gateway nodes share one budget (per-node limiters would let total = N×limit). Return `429` + `Retry-After` and rate-limit headers. Reduce the per-request hop with local token leasing. Trade-offs: accuracy vs state (fixed window is simplest but allows boundary bursts; sliding window is more accurate, more state), and Redis as a dependency (replicate it). Tie back to Step 5's token bucket."
+  },
+  {
+    "slug": "iq-sd-mock-news-feed",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Design a news feed (Twitter/Facebook home timeline). Compare fan-out-on-write vs fan-out-on-read.",
+    "companies": "Meta, Twitter, well-known SD prompt",
+    "source_name": "ByteByteGo — Design a News Feed System",
+    "source_url": "https://bytebytego.com/courses/system-design-interview/design-the-news-feed-system",
+    "model_answer": "**Fan-out-on-write (push):** when you post, write the post id into each follower's precomputed feed (Redis list). Reads are O(1)/cheap — great for most users. **Fan-out-on-read (pull):** compute the feed at read time by merging the people you follow — avoids the celebrity problem. The classic answer is **hybrid**: push for normal accounts, pull for celebrities with millions of followers (push would be a write storm). Add caching, pagination by cursor, and ranking. Discuss the write-amplification of push and the read cost of pull — naming that trade-off is the point."
+  },
+  {
+    "slug": "iq-sd-mock-typeahead",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Design typeahead / search autocomplete that suggests as the user types, at scale, with low latency.",
+    "companies": "Google, Amazon, well-known SD prompt",
+    "source_name": "ByteByteGo — Design a Search Autocomplete System",
+    "source_url": "https://bytebytego.com/courses/system-design-interview/design-a-search-autocomplete-system",
+    "model_answer": "Serve prefixes from a **trie** of popular queries, with the top-K completions **precomputed and cached at each node** so a lookup is one traversal, not a ranking pass. Build/update the trie offline from query logs (a data pipeline aggregates frequencies); serve from in-memory replicas. Cap suggestions, debounce client keystrokes, and shard the trie by prefix. Trade-offs: freshness (rebuild cadence) vs cost; exact-prefix vs fuzzy/typo tolerance (edit distance is expensive — usually a separate path). This is the 'index + top-K + cache' pattern."
+  },
+  {
+    "slug": "iq-sd-mock-top-k",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Design 'top 10 trending hashtags', updated every minute, over a high-volume stream.",
+    "companies": "Twitter, Meta, well-known SD prompt",
+    "source_name": "System Design Primer",
+    "source_url": "https://github.com/donnemartin/system-design-primer",
+    "model_answer": "Exact global counting at firehose scale is too expensive, so use **streaming + approximation**: count per window with a sketch like **Count-Min Sketch** (sublinear memory, slight over-count) and keep a **heap of the top-K** per shard; merge shard tops periodically for the global top-K. Use tumbling/sliding time windows for 'last hour'. Trade accuracy for memory/throughput. Mention map-reduce/stream processors (Flink/Kafka Streams). This combines Step 2's heap (top-K) with stream processing — name the exact-vs-approximate trade-off."
+  },
+  {
+    "slug": "iq-sd-mock-write-your-own",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Invent your own system-design question (pick a product you use), then solve it in 40 minutes with the framework. Where did you slip?",
+    "companies": "Meta-practice (self-assessment)",
+    "source_name": "System Design Primer — Study guide",
+    "source_url": "https://github.com/donnemartin/system-design-primer#study-guide",
+    "model_answer": "Highest-leverage practice: designing the question forces you to think like the interviewer (what constraints make it interesting, where the scale pressure is). Solve it timed, then self-audit against the rubric: did you clarify requirements first, do a back-of-envelope estimate, define API + data model before drawing boxes, identify the bottleneck, and articulate trade-offs under 'now scale 10×'? Note which step you rushed (usually requirements or estimation) and drill it. Record yourself talking it through — communication is half the score."
+  }
+]

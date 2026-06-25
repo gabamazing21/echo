@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-test-table-driven",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Write a table-driven test with subtests for a function. Why is this the idiomatic Go pattern?",
+    "companies": "Common Go interviews",
+    "source_name": "Learn Go with Tests",
+    "source_url": "https://quii.gitbook.io/learn-go-with-tests",
+    "model_answer": "A slice of cases + a loop with `t.Run` per case:\n\n```go\ncases := []struct{ name string; in, want int }{\n    {\"zero\", 0, 0}, {\"pos\", 2, 4},\n}\nfor _, c := range cases {\n    t.Run(c.name, func(t *testing.T) {\n        if got := Square(c.in); got != c.want {\n            t.Errorf(\"Square(%d)=%d, want %d\", c.in, got, c.want)\n        }\n    })\n}\n```\n\nWhy: adding a case is one line; `t.Run` gives each case its own name in output and lets you run one with `-run`; failures don't stop the others. Mention `t.Helper()` for assertion helpers and `-race`/`-cover` flags."
+  },
+  {
+    "slug": "iq-pkg-exported",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "How does Go decide what's exported from a package, and why does package design matter?",
+    "companies": "Common Go interviews",
+    "source_name": "Effective Go — names",
+    "source_url": "https://go.dev/doc/effective_go#names",
+    "model_answer": "Capitalized identifiers are **exported** (public to other packages); lowercase are package-private. That's the entire access-control model — no `public/private` keywords.\n\nDesign matters because the exported surface is your API contract: keep it small, expose interfaces/constructors not internals, and put implementation details in lowercase or an `internal/` directory (which the compiler forbids importing from outside the parent). Smaller surface = easier to evolve without breaking callers (ties to backward compatibility from DDIA, Step 7)."
+  },
+  {
+    "slug": "iq-test-mock-interface",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "How do you make code that calls a database or HTTP API unit-testable without the real dependency?",
+    "companies": "Backend Go roles",
+    "source_name": "Go testing patterns",
+    "source_url": "https://pkg.go.dev/testing",
+    "model_answer": "Depend on a small **interface**, not a concrete client, and inject it. In tests pass a fake/stub that implements the interface; in prod pass the real one (the bookmarks API in Step 4 uses exactly this `Store` seam).\n\n```go\ntype UserStore interface { ByID(ctx, id) (*User, error) }\n// handler takes UserStore; test passes a fakeStore returning canned data\n```\n\nFor HTTP, use `net/http/httptest` to spin a real test server, or inject an `http.Client` with a custom `RoundTripper`. Key principle: invert the dependency at a narrow interface so tests are fast, deterministic, and offline."
+  }
+]

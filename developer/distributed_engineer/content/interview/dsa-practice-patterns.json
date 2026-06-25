@@ -1,0 +1,56 @@
+[
+  {
+    "slug": "iq-patterns-two-sum-classify",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Two Sum is the canonical 'classify the pattern' warm-up. Given the unsorted variant, which pattern fires, and how does the answer change if the array were sorted?",
+    "companies": "Amazon, Google, Apple, Microsoft, Adobe",
+    "source_name": "NeetCode 150 / LeetCode #1",
+    "source_url": "https://leetcode.com/problems/two-sum/",
+    "model_answer": "Unsorted → **hashing pattern**: one pass, store `value -> index`, look up the complement `target-x`. O(n) time, O(n) space.\n\nSorted → the **two-pointers pattern** applies instead: `lo`/`hi` from both ends, move `lo` up if the sum is too small, `hi` down if too big. O(n) time, **O(1) space**.\n\nThe practice lesson: the *same story* maps to different patterns depending on a single constraint (sorted?). Training yourself to spot that trigger — 'sorted + find a pair' → two pointers — is the whole point of pattern recognition. Always state the brute-force O(n²) first, then optimize.",
+    "challenge_slug": "two-sum"
+  },
+  {
+    "slug": "iq-patterns-climbing-stairs-dp",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Climbing Stairs: count distinct ways to climb n stairs taking 1 or 2 steps. Use it to introduce dynamic programming — what is the state and recurrence?",
+    "companies": "Amazon, Google, Adobe",
+    "source_name": "NeetCode 150 / LeetCode #70",
+    "source_url": "https://leetcode.com/problems/climbing-stairs/",
+    "model_answer": "Ways to reach step `n` = ways to reach `n-1` (then a 1-step) + ways to reach `n-2` (then a 2-step): `f(n) = f(n-1) + f(n-2)` — it's Fibonacci. Naive recursion is **O(2ⁿ)** from overlapping subproblems; that's the DP trigger.\n\nMemoize → O(n) time/space; or go bottom-up with two rolling variables → **O(n) time, O(1) space**. The DP recipe to verbalize: (1) define the **state**, (2) write the **recurrence**, (3) decide a **base case**, (4) cache or tabulate. Recognizing 'number of ways / overlapping subproblems' → DP is the pattern.",
+    "challenge_slug": "climbing-stairs"
+  },
+  {
+    "slug": "iq-patterns-max-subarray-kadane",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Maximum Subarray: find the contiguous subarray with the largest sum. Which pattern is this, and what is Kadane's insight?",
+    "companies": "Amazon, Microsoft, Bloomberg, LinkedIn",
+    "source_name": "Blind 75 / LeetCode #53",
+    "source_url": "https://leetcode.com/problems/maximum-subarray/",
+    "model_answer": "A DP / running-state pattern (Kadane's algorithm). At each element decide: extend the current run, or start fresh here — `cur = max(x, cur+x)`; track the global best. **O(n) time, O(1) space.**\n\nThe insight: the best subarray ending at `i` depends only on the best ending at `i-1`, so one pass with two variables suffices — no nested loops. The trap is initialization: seed `best` with the first element (or -∞), not 0, or an **all-negative** array returns a wrong 0. That edge case is the classic interview check.",
+    "challenge_slug": "max-subarray"
+  },
+  {
+    "slug": "iq-patterns-graph-bfs-dfs",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Number of Islands: count connected groups of land in a grid. Which traversal patterns solve it, and what is the cost?",
+    "companies": "Amazon, Meta, Google, Microsoft, Bloomberg",
+    "source_name": "NeetCode 150 / LeetCode #200",
+    "source_url": "https://leetcode.com/problems/number-of-islands/",
+    "model_answer": "The **connected-components** pattern over an implicit graph (grid cells = nodes, adjacency = up/down/left/right). Scan cells; on each unvisited '1', launch a **DFS or BFS** that floods the whole island, marking cells visited; increment the count. **O(rows·cols) time.**\n\nTrigger to recognize: 'grid / regions / connected / reachable' → graph traversal. DFS (recursion or explicit stack) is shortest to write; BFS (queue) avoids deep-recursion stack overflow on huge grids. Either marks visited in place to avoid recounting. Union-Find is a third valid approach worth naming."
+  },
+  {
+    "slug": "iq-patterns-union-find",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "What is the Union-Find (disjoint-set) pattern, what problems trigger it, and what are the two optimizations that make it near-constant time?",
+    "companies": "Google, Amazon, Meta",
+    "source_name": "NeetCode 150 / LeetCode #547 (Number of Provinces)",
+    "source_url": "https://leetcode.com/problems/number-of-provinces/",
+    "model_answer": "Union-Find maintains disjoint sets with two ops: `find(x)` (which set?) and `union(a,b)` (merge). Trigger phrases: **connected components, grouping, 'are these connected?', detecting cycles** in an undirected graph, especially with incremental edges.\n\nTwo optimizations make it nearly O(1) amortized — **O(α(n))**, inverse Ackermann, effectively constant: (1) **union by rank/size** (attach the smaller tree under the larger), and (2) **path compression** (point nodes directly at the root during `find`). Together they keep trees flat. It's the natural fit for problems like Number of Provinces or Kruskal's MST, and often cleaner than BFS/DFS when edges arrive dynamically.",
+    "challenge_slug": "two-sum"
+  }
+]

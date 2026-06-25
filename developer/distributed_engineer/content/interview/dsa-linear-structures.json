@@ -1,0 +1,55 @@
+[
+  {
+    "slug": "iq-linear-reverse-linked-list",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Reverse a singly linked list. Do it iteratively in place, then discuss the recursive version.",
+    "companies": "Amazon, Microsoft, Apple, Meta, Google",
+    "source_name": "NeetCode 150 / LeetCode #206",
+    "source_url": "https://leetcode.com/problems/reverse-linked-list/",
+    "model_answer": "Iterative: walk the list carrying three pointers — `prev`, `cur`, `next`. Each step, save `next = cur.Next`, flip `cur.Next = prev`, then advance `prev = cur; cur = next`. Return `prev`. **O(n) time, O(1) space.**\n\nThe one gotcha that sinks people: you *must* save `cur.Next` **before** overwriting it, or you lose the rest of the list. The recursive version is elegant but **O(n) space** from the call stack — mention the trade-off, since 'in place / O(1) space' is usually the expected answer.",
+    "challenge_slug": "reverse-linked-list"
+  },
+  {
+    "slug": "iq-linear-merge-two-sorted-lists",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Merge two sorted linked lists into one sorted list by splicing their nodes.",
+    "companies": "Amazon, Microsoft, Apple, Adobe",
+    "source_name": "NeetCode 150 / LeetCode #21",
+    "source_url": "https://leetcode.com/problems/merge-two-sorted-lists/",
+    "model_answer": "Use a **dummy head** node and a `tail` pointer. Compare the two list heads, splice the smaller node onto `tail`, advance that list, repeat. When one list empties, link the remaining list directly. Return `dummy.Next`. **O(n+m) time, O(1) space.**\n\nThe dummy-head trick is the real lesson: it removes the special case of 'which list owns the first node', so you don't write branchy code for the head. This same merge step is the 'combine' half of merge sort — call that connection out.",
+    "challenge_slug": "merge-two-sorted-lists"
+  },
+  {
+    "slug": "iq-linear-valid-parentheses",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Given a string of '()[]{}', determine if the brackets are balanced and correctly nested.",
+    "companies": "Amazon, Google, Microsoft, Bloomberg",
+    "source_name": "NeetCode 150 / LeetCode #20",
+    "source_url": "https://leetcode.com/problems/valid-parentheses/",
+    "model_answer": "Push every opening bracket onto a **stack**; on a closing bracket, pop and check it matches the expected opener — mismatch or empty-stack-on-close means invalid. At the end the stack must be **empty** (catches unclosed openers like `'('`). **O(n) time, O(n) space.**\n\nThis is the canonical 'matching pairs / nesting → stack' pattern. Two edge cases interviewers seed: a closing bracket with an empty stack, and leftover openers at the end. Get both and it's a clean pass.",
+    "challenge_slug": "valid-parentheses"
+  },
+  {
+    "slug": "iq-linear-lru-cache",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Design an LRU cache with O(1) get and put. What two data structures combine to make both operations constant time, and why?",
+    "companies": "Amazon, Meta, Google, Microsoft, Bloomberg",
+    "source_name": "NeetCode 150 / LeetCode #146",
+    "source_url": "https://leetcode.com/problems/lru-cache/",
+    "model_answer": "Combine a **hash map** (key → node) with a **doubly linked list** ordered by recency. The map gives O(1) lookup; the doubly linked list gives O(1) move-to-front and O(1) eviction from the tail.\n\nWhy *doubly* linked? You must unlink an arbitrary node in O(1) when it's accessed — that needs the node's `prev` pointer, which a singly linked list lacks. On `get`/`put`, move the node to the front; when over capacity, evict the tail and delete its key from the map. Use a **sentinel head/tail** to kill null-checks. Go's `container/list` is a ready doubly linked list, but interviewers usually want you to reason through the pointer surgery yourself."
+  },
+  {
+    "slug": "iq-linear-slice-queue-leak",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "A teammate implements a queue as a slice and dequeues with `q = q[1:]`. What's the memory problem, and how does a ring buffer fix it?",
+    "companies": "Common Go interviews",
+    "source_name": "Go Slices: usage and internals",
+    "source_url": "https://go.dev/blog/slices-intro",
+    "model_answer": "`q = q[1:]` is O(1), but it only advances the slice *header* — the backing array still pins every element the queue ever held, and the dropped fronts are never garbage-collected. A long-lived enqueue/dequeue loop leaks memory unboundedly. (Worse, the consumed slots can keep *pointers* alive, blocking GC of those objects too.)\n\nFixes: periodically compact (`append(q[:0], q[1:]...)`, but that's O(n) per call), or use a **ring buffer** — a fixed `[]T` with `head`, `tail`, `count` indices wrapping via modulo. Both ends are O(1) *and* memory is bounded, which is why production bounded queues and log buffers use one."
+  }
+]

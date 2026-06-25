@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "iq-lock-ttl-fencing",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "A colleague says 'we use Redis/etcd locks with a TTL, so a crashed holder can't freeze the lock — that's safe enough.' Where is this wrong, and what's the real fix?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "Designing Data-Intensive Applications, Ch. 8 (Kleppmann)",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "A TTL solves the *crashed holder* problem (the lock auto-frees) but **not the paused holder problem**, and that's the one that corrupts data. Trace: client A acquires with a 10s lease. A's process freezes — a long GC pause, hypervisor stall, swap storm — and doesn't know it. The lease expires; client B legitimately acquires. A wakes up still *believing* it holds the lock and writes to the protected resource. Now A and B both write: the mutual exclusion the lock existed to provide is gone, at the exact moment it mattered. No TTL value fixes this, because a pause can exceed *any* timeout.\n\nThe real fix is **fencing tokens.** The lock service hands out a monotonically increasing token on each acquire. The holder attaches its token to every write, and **the protected resource rejects any write whose token is lower than the highest it has seen.** B acquired after A, so B's token is higher; once the resource sees B's token, A's delayed write carrying the older token is rejected. Safety no longer depends on the holder being awake or honest — the resource enforces ordering. A lock design with leases but no fencing is subtly broken."
+  },
+  {
+    "slug": "iq-lock-token-uniqueness",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Your lock service is itself replicated across a Raft cluster. How do you guarantee fencing tokens are globally unique and monotonic, even across leader changes?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "etcd — leases and revisions as fencing tokens",
+    "source_url": "https://etcd.io/docs/latest/learning/api_guarantees/",
+    "model_answer": "The danger is each leader minting tokens from a local counter: after a failover the new leader could restart or reuse numbers, breaking monotonicity, and two leaders during a partition could hand out the *same* token to different holders — defeating fencing.\n\nThe clean answer is to **derive the token from something the replicated log already makes globally monotonic.** Two good options: (1) keep a counter as a **key in the replicated store** and increment it via a CAS/log command on each acquire — because the increment goes through the Raft log, it's totally ordered and survives leader changes; (2) **reuse the Raft log index** of the acquire command itself, which is monotonic and unique by construction. etcd does essentially this: it exposes the key-value store's **revision** (a cluster-wide monotonic counter advanced by the log) as the fencing token.\n\nWhat you must *not* do is generate the token before consensus (e.g. on whichever server the client hit) — only a value assigned by the committed log is safe across the cluster. A stale leader can't advance the real counter because its commands never reach a majority, so it can't mint a competing token."
+  },
+  {
+    "slug": "iq-lock-lease-tuning",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "How do you choose the lease TTL and renewal interval for a distributed lock? What breaks if each is too short or too long?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "etcd — lease KeepAlive and TTL",
+    "source_url": "https://etcd.io/docs/latest/learning/api_guarantees/",
+    "model_answer": "It's a tension between **fast recovery** and **stability.** The TTL bounds how long a *crashed* holder keeps the lock before others can take it; the renewal interval is how often a healthy holder pushes `Expires` forward to keep it.\n\n**TTL too short:** a brief, normal stall — a GC pause, a slow network round-trip to the lock cluster, scheduler latency — outlives the lease, the lock is wrongly stolen from a healthy holder, and you get unnecessary churn and contention. **TTL too long:** when a holder genuinely crashes, the lock stays frozen for that whole duration, hurting availability. **Renewal interval too long (close to TTL):** one missed/slow renewal lets the lease lapse — too little margin. **Too short:** wasteful load on the lock service (every renewal is a consensus write).\n\nRule of thumb: set TTL to comfortably exceed your worst expected pause/round-trip (often seconds to tens of seconds), and renew at roughly **TTL/3** so you tolerate a couple of missed renewals before expiry. And remember — even perfect tuning doesn't make the lock safe against pauses; that's what **fencing tokens** are for. Lease tuning is about liveness/availability, fencing is about correctness."
+  },
+  {
+    "slug": "iq-lock-deterministic-expiry",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "You check lease expiry with time.Now() independently on each replica when applying the acquire command. Why is this a bug, and how do you make expiry deterministic?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "In Search of an Understandable Consensus Algorithm (Raft paper), §8",
+    "source_url": "https://raft.github.io/raft.pdf",
+    "model_answer": "Because the **state machine must be deterministic** — every replica applying the same committed command must reach the same result. `time.Now()` read independently on each node returns different values (clocks drift, and nodes apply the same log entry at slightly different real times). So replica 1 might judge the lease expired and let the new acquire succeed, while replica 2 reads a clock a few ms behind, judges it still valid, and rejects the acquire. Now the replicas **disagree on who holds the lock** — split state, the cardinal sin in a replicated state machine. This is the wall-clock-is-not-a-source-of-truth problem.\n\nThe fix: make time an **input to the command, not something each node reads.** The leader stamps `now` into the acquire/renew command *before* it's appended to the log. Then every replica applies the identical timestamp and computes the identical expiry verdict, so all agree. The clock value flows through consensus like any other field. (Even then, that timestamp is only an approximation of real time used consistently — for actual safety against a paused holder you still need fencing tokens, not just agreed-upon expiry.)"
+  },
+  {
+    "slug": "iq-lock-cas-not-rmw",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Why must Acquire be a single compare-and-set command through the log, rather than a Get followed by a Put? Show the race.",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "In Search of an Understandable Consensus Algorithm (Raft paper), §5",
+    "source_url": "https://raft.github.io/raft.pdf",
+    "model_answer": "A lock is correct only if 'check it's free **and** take it' is one indivisible step. `Get` then `Put` is **two separate log entries with a gap between them**, and another acquirer can slip into that gap.\n\nRace: client A does `Get(\"lock/deploy\")` → sees empty. Client B does `Get(\"lock/deploy\")` → also sees empty (A hasn't written yet). A does `Put(holder=A)`; B does `Put(holder=B)`. Both believed it was free; now the key has been written by both and **two holders** think they own the lock — exactly the bug the lock exists to prevent.\n\nThe fix is a single **compare-and-set** command: 'set `lock/deploy` to my id *only if* its current value is empty.' Because it's one entry in the totally-ordered Raft log, applied to one deterministic state on every replica, there is no window between the check and the set — the log *is* the serialization point. Whoever's CAS commits first in the log wins; every later CAS sees a non-empty value and fails. Read-modify-write across two commands has no such atomicity and is the most common way homegrown locks become unsafe."
+  }
+]

@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "iq-mr-data-skew",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Your MapReduce job has nReduce=10, but one reducer takes 20x longer than the rest. The job is bottlenecked on it. What's happening and how do you fix it?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "Google MapReduce paper (Dean & Ghemawat, 2004)",
+    "source_url": "https://pdos.csail.mit.edu/6.824/papers/mapreduce.pdf",
+    "model_answer": "This is **data skew**. Partitioning is `ihash(key) % nReduce`, which balances *keys* evenly but not *work*: if one key (or a few hot keys) holds a huge share of the values — think the word \"the\" in word count, or a celebrity user id — its reduce bucket dwarfs the others, and that one reducer dominates wall-clock time. The job is only as fast as its slowest reducer (the straggler problem, §3.6 of the paper).\n\nFixes: (1) **Pre-aggregate** with a combiner so each map emits one partial-sum per key instead of N copies, shrinking the heavy bucket. (2) **Custom partitioner** that splits hot keys across buckets, then a second pass to merge. (3) **Salt** the hot key (append a random suffix), reduce, then re-reduce. (4) More reduce tasks so the hot key is a smaller fraction of any one worker. The lab's `ihash` is fine for uniform data; production needs skew awareness."
+  },
+  {
+    "slug": "iq-mr-crash-cost",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Your coordinator re-runs a task whenever it has been in-progress for more than ~10 seconds. What does this cost you, and why is it still correct?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "MIT 6.824 Lab 1: MapReduce",
+    "source_url": "https://pdos.csail.mit.edu/6.824/labs/lab-mr.html",
+    "model_answer": "The cost is **wasted, possibly duplicate work**: a slow-but-alive worker that just missed the deadline keeps running while a replacement also runs the same task. You pay double CPU/IO for that task, and both workers eventually write output. The timeout is a heuristic — set it too low and you re-run healthy tasks constantly; too high and a real crash stalls the whole job.\n\nIt stays correct because map/reduce tasks are **deterministic and idempotent at the output level**: re-running produces the same result, and you commit output via **write-to-temp-then-rename**. Rename is atomic on one filesystem, so even if two workers finish the same reduce task, the final `mr-out-Y` is one complete file, never a half-written interleave. Correctness comes from atomic commit, not from preventing duplicate execution — you tolerate the duplication rather than avoid it. This is the same backup-task idea the paper uses to beat stragglers."
+  },
+  {
+    "slug": "iq-mr-shuffle-partition",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Walk through the shuffle. Where does it physically happen, and why must every value for a key reach the same reducer?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "Google MapReduce paper (Dean & Ghemawat, 2004)",
+    "source_url": "https://pdos.csail.mit.edu/6.824/papers/mapreduce.pdf",
+    "model_answer": "Shuffle is the regrouping between map and reduce. There is no separate \"shuffle process\" — it's split across both sides. On the **map side**, each map task partitions its intermediate output into `nReduce` buckets with `ihash(key) % nReduce`, writing files `mr-X-Y` (map X, bucket Y). On the **reduce side**, reduce task Y reads *every* `mr-X-Y` across all maps, sorts by key, and groups equal keys.\n\nEvery value for a key must land at one reducer because the reduce contract is `Reduce(key, ALL values for key)` — word count's `Reduce(\"the\", [\"1\",\"1\",...])` is only correct if it sees the complete list. A deterministic hash of the key guarantees the same key always routes to the same bucket Y regardless of which map produced it. Get the hash or the bucket-file naming wrong and a key's values scatter across reducers, producing partial, silently-wrong counts."
+  },
+  {
+    "slug": "iq-mr-batch-vs-stream",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "MapReduce is batch. When would batch be the wrong tool, and what changes if you need the same aggregation in near-real-time?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "Designing Data-Intensive Applications, Ch. 10-11 (Kleppmann)",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "Batch (MapReduce) reads a **bounded, fixed input**, runs to completion, and writes immutable output — great for nightly reports, ETL, reindexing, where latency in minutes-to-hours is fine and you want reproducibility (re-running the same input gives the same output). It is the *wrong* tool when you need results within seconds of an event arriving, or the input never ends.\n\nFor near-real-time you move to **stream processing** (Kafka + Flink/Spark Streaming). Differences: input is **unbounded**, so you process incrementally over **windows** (tumbling/sliding) instead of one big pass; you maintain **continuous state** rather than computing once and exiting; and you must handle **late/out-of-order events** with watermarks. You trade batch's exact, reproducible whole-dataset view for low latency and incremental updates. Many systems run both (Lambda/Kappa architectures): a fast streaming path for fresh approximate results, a batch path that periodically recomputes the authoritative version."
+  },
+  {
+    "slug": "iq-mr-coordinator-spof",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "The coordinator is a single point of failure. The paper says that's acceptable. Why, and what would you do for a system that can't tolerate it?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "Google MapReduce paper (Dean & Ghemawat, 2004)",
+    "source_url": "https://pdos.csail.mit.edu/6.824/papers/mapreduce.pdf",
+    "model_answer": "The paper (§3.3) accepts coordinator failure because it is **a single process out of thousands of workers** — the probability it dies during any given job is low, and the cost of recovery is just re-running that one job. Worker failures, by contrast, are common at scale, so the design invests its fault tolerance there (re-run tasks on timeout) and lets the rare coordinator crash abort the job. It's a deliberate cost/benefit call, not an oversight.\n\nFor a system that can't tolerate it, you'd **checkpoint coordinator state** (task assignments, completion status) to durable storage so a restarted coordinator resumes mid-job instead of restarting, or run the coordinator's state on a **replicated, consensus-backed store** (exactly the Raft KV you build later in this step) so a standby can take over. That's the leap from MapReduce's pragmatic SPOF to a genuinely highly-available scheduler — and why the later labs in this step exist."
+  }
+]

@@ -1,0 +1,57 @@
+[
+  {
+    "slug": "iq-net-url-to-bytes-trace",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Classic question: walk through everything that happens when you type a URL into a browser and press Enter, until the page renders.",
+    "companies": "Google, Amazon, Meta",
+    "source_name": "alex/what-happens-when (GitHub)",
+    "source_url": "https://github.com/alex/what-happens-when",
+    "model_answer": "Hit the layers in order; depth is what's graded:\n\n1. **Parse the URL** → scheme, host, path, default port (80/443).\n2. **DNS resolution** — check browser/OS/resolver caches; else recurse root → TLD → authoritative. Usually a UDP query to port 53.\n3. **TCP handshake** — SYN / SYN-ACK / ACK to `IP:port` (one round trip).\n4. **TLS handshake** (if HTTPS) — negotiate cipher + exchange keys; another 1–2 round trips (1 with TLS 1.3).\n5. **Send the HTTP request** — `GET /path`, Host, headers; it's encapsulated HTTP→TCP→IP→link and routed hop by hop.\n6. **Server responds** — status line + headers + body; TCP reassembles the ordered stream.\n7. **Render** — parse HTML, build the DOM, fetch sub-resources (CSS/JS/images, each its own request, often on reused/keep-alive connections), run JS, paint.\n\nStrong candidates note caching at every level, that any step can stall, and connection reuse to avoid repeat handshakes.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-net-3way-handshake-why",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Why does TCP need a THREE-way handshake? Why not two messages? What is actually being agreed?",
+    "companies": "Amazon, Google, Cloudflare",
+    "source_name": "HPBN — Building Blocks of TCP",
+    "source_url": "https://hpbn.co/building-blocks-of-tcp/",
+    "model_answer": "The handshake confirms **both directions work** and **synchronizes initial sequence numbers (ISNs)** so every byte can be ordered and acknowledged. Each side must pick a random ISN *and* have the other side acknowledge it — that's inherently three messages:\n\n- **SYN (seq=x)** — client proposes its ISN.\n- **SYN-ACK (seq=y, ack=x+1)** — server acks x and proposes its own ISN y.\n- **ACK (ack=y+1)** — client acks y. Both ISNs are now confirmed.\n\nTwo messages would leave the server's ISN unacknowledged, so the client→server direction would be unverified. Random ISNs also defend against stale/spoofed segments from old connections. Cost: at least **one full round trip before any data** — exactly why high-latency systems pool and reuse connections rather than reopening per request.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-net-tcp-vs-udp-usecases",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "Give the concrete differences between TCP and UDP, and name a real use-case where you'd pick each — and why.",
+    "companies": "Amazon, Microsoft",
+    "source_name": "Cloudflare Learning — TCP vs UDP",
+    "source_url": "https://www.cloudflare.com/learning/ddos/glossary/user-datagram-protocol-udp/",
+    "model_answer": "**TCP** is connection-oriented, reliable, ordered, with flow + congestion control — at the cost of a handshake and head-of-line blocking. **UDP** is connectionless fire-and-forget: no handshake, no acks, no ordering, lower latency and overhead.\n\nPick **TCP** when correctness beats latency: HTTP/REST, databases, SSH, file transfer — you can't tolerate missing or reordered bytes. Pick **UDP** when *fresh-now* beats *complete-later*: live video/voice (a re-sent old frame is useless — better to drop it), online gaming, and DNS (tiny request/reply; just retry if lost). The reasoning — \"is a late retransmit worth more than the freshest packet?\" — is what interviewers want, not the table. Note QUIC/HTTP3 builds reliability *on top of* UDP to dodge TCP's head-of-line blocking while keeping control in user space.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-net-dns-over-udp",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "Why does DNS normally run over UDP rather than TCP? When does it fall back to TCP?",
+    "companies": "Systems / infra interviews",
+    "source_name": "Cloudflare Learning — What is DNS?",
+    "source_url": "https://www.cloudflare.com/learning/dns/what-is-dns/",
+    "model_answer": "A DNS lookup is a **single small request and a single small reply** — the classic case where TCP's setup tax isn't worth it. Over UDP you skip the 3-way handshake (and connection teardown), so the lookup is one round trip instead of several; if a packet is lost you just **retry** or query another resolver. At internet scale, multiplying a handshake across billions of lookups would be enormous waste.\n\nDNS **falls back to TCP** when the response is too large for a single UDP datagram — historically >512 bytes; the server sets the **truncated (TC) bit** and the client retries over TCP. **Zone transfers (AXFR)** also use TCP for reliability, and **DNS-over-TLS / DNS-over-HTTPS** use TCP for privacy. So: UDP by default for speed, TCP when size or security demands it.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-net-tls-handshake-cost",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "What does the TLS handshake cost on top of TCP, and how do TLS 1.3, session resumption, and keep-alive reduce it?",
+    "companies": "Cloudflare, Google, Amazon",
+    "source_name": "HPBN — Transport Layer Security (TLS)",
+    "source_url": "https://hpbn.co/transport-layer-security-tls/",
+    "model_answer": "Before any HTTPS byte moves you pay: the **TCP** handshake (1 RTT) **plus** the **TLS** handshake to negotiate the cipher suite and exchange keys, then asymmetric crypto to authenticate. In **TLS 1.2** that's ~**2 extra RTTs**; **TLS 1.3** cuts the full handshake to **1 RTT**, and **0-RTT** resumption lets a returning client send data immediately (with replay caveats). On a 100 ms-RTT link those round trips dominate page latency.\n\nMitigations: **session resumption** (session IDs / tickets) skips the full key exchange on reconnect; **keep-alive / connection reuse** amortizes one handshake over many requests; **HTTP/2** multiplexes many requests on that one connection; **OCSP stapling** avoids a separate cert-revocation round trip. The takeaway interviewers want: handshakes are *round-trip* bound, so the wins come from doing fewer of them — reuse connections, resume sessions, prefer TLS 1.3.",
+    "challenge_slug": ""
+  }
+]

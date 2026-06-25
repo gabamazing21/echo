@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-lc-order-without-clocks",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "How do you order events across machines when you can't trust wall-clocks? Why isn't NTP enough?",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "DDIA Ch.9 — Ordering Guarantees",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "Use **logical clocks** that track causality, not time. Lamport's **happened-before** (→) orders events that are causally related (same process, or send→receive) and leaves unrelated events **concurrent**. A Lamport counter (`L=max(local,received)+1`) gives a total order consistent with causality. NTP isn't enough because it corrects drift but can step time *backwards*, so two events can get timestamps in the wrong causal order — and there's no shared 'now' across nodes anyway. State: 'wall-clock for humans, logical clocks for ordering.'"
+  },
+  {
+    "slug": "iq-lc-lamport-vs-vector",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Lamport timestamps vs vector clocks — what can each tell you, and what's the cost difference?",
+    "companies": "Distributed systems interviews",
+    "source_name": "DDIA Ch.9",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "Lamport: one counter per node; `A→B ⇒ L(A)<L(B)`, but the converse is false — `L(A)<L(B)` does **not** prove causality, so Lamport **can't detect concurrency**. Vector clocks: one counter per node carried as a vector; comparing vectors detects A→B, B→A, *or* concurrent (neither dominates) — exactly what you need to flag a write conflict. Cost: vectors are O(N) space per timestamp for N nodes (pruned in practice via version vectors). Use Lamport for a cheap consistent total order; vector clocks when you must detect concurrent updates."
+  },
+  {
+    "slug": "iq-lc-concurrent-writes",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "In a leaderless store, two replicas accept writes to the same key during a partition. How do you detect and resolve the conflict?",
+    "companies": "Amazon (DynamoDB), Cassandra interviews",
+    "source_name": "Amazon Dynamo paper",
+    "source_url": "https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf",
+    "model_answer": "Attach a **vector clock** (or dotted version vector) to each value. On read, compare versions: if one descends from the other, keep the newer; if they're **concurrent** (neither dominates), you have a genuine conflict. Resolve by: last-write-wins (simple, lossy), application merge (e.g. union a shopping cart), or a **CRDT** that merges deterministically. Dynamo surfaces concurrent versions ('siblings') to the app. Don't use a physical timestamp for LWW unless silently dropping a write is acceptable."
+  }
+]

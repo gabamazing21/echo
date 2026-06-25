@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-bmpg-upsert",
+    "kind": "sql",
+    "difficulty": "medium",
+    "prompt": "Insert a bookmark, or update its title if a row with the same URL already exists, in one statement.",
+    "companies": "Backend / DB interviews",
+    "source_name": "PostgreSQL docs — INSERT ON CONFLICT",
+    "source_url": "https://www.postgresql.org/docs/current/sql-insert.html#SQL-ON-CONFLICT",
+    "model_answer": "UPSERT with `ON CONFLICT`:\n\n```sql\nINSERT INTO bookmarks (url, title) VALUES ($1, $2)\nON CONFLICT (url) DO UPDATE SET title = EXCLUDED.title\nRETURNING id;\n```\n\nRequires a unique constraint/index on `url` (that's the conflict target). `EXCLUDED` is the row that would have been inserted. Use `DO NOTHING` to ignore dupes. This is atomic — no read-then-write race. Interview follow-up: UPSERT can still deadlock under heavy concurrent inserts on different conflict targets; keep insert order consistent."
+  },
+  {
+    "slug": "iq-bmpg-bulk-copy",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Import 100,000 bookmarks as fast as possible. Why is a loop of INSERTs wrong, and what do you use?",
+    "companies": "Backend / data interviews",
+    "source_name": "pgx — CopyFrom",
+    "source_url": "https://pkg.go.dev/github.com/jackc/pgx/v5#Conn.CopyFrom",
+    "model_answer": "100k round-trip INSERTs = 100k network/parse/commit cycles — minutes. Use the Postgres **COPY** protocol via pgx `CopyFrom`, which streams rows in one operation (orders of magnitude faster). Alternatives: multi-row `INSERT ... VALUES (...),(...)` batched (e.g. 1000/stmt) inside a transaction, or `pgx.Batch`. Drop/recreate non-essential indexes around a huge load. The signal: you know the bulk path, not just per-row inserts."
+  },
+  {
+    "slug": "iq-bmpg-soft-delete",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Should deleting a bookmark remove the row or set deleted_at? Discuss the trade-offs and index impact.",
+    "companies": "Backend / DB interviews",
+    "source_name": "PostgreSQL docs — Partial Indexes",
+    "source_url": "https://www.postgresql.org/docs/current/indexes-partial.html",
+    "model_answer": "Hard delete: simplest, smaller tables, but irreversible and loses audit/history. Soft delete (`deleted_at TIMESTAMPTZ`): recoverable, keeps references valid, enables audit — but **every query must add `WHERE deleted_at IS NULL`** (easy to forget → leaking deleted rows) and the table grows. Mitigate with a **partial index** (`CREATE INDEX ... WHERE deleted_at IS NULL`) so active-row queries stay fast, and a background job to purge old soft-deletes. Choose by whether you need recoverability/audit."
+  },
+  {
+    "slug": "iq-bmpg-not-found-delete",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "How does your DELETE handler tell 'deleted one row' from 'that id didn't exist', and what status codes?",
+    "companies": "Backend / API interviews",
+    "source_name": "pgx — CommandTag",
+    "source_url": "https://pkg.go.dev/github.com/jackc/pgx/v5#CommandTag",
+    "model_answer": "`Exec` returns a `CommandTag`; check `tag.RowsAffected()`. Zero rows → the id didn't exist → return 404 (not 500, not a silent 204). One row → 204 No Content. A DELETE that matched nothing is not an error to the DB, so you must surface the distinction yourself:\n\n```go\ntag, err := pool.Exec(ctx, `DELETE FROM bookmarks WHERE id=$1`, id)\nif err != nil { return err }\nif tag.RowsAffected() == 0 { return ErrNotFound }\n```"
+  }
+]

@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS study_log;
+DROP TABLE IF EXISTS submissions;
+DROP TABLE IF EXISTS quiz_progress;
+DROP TABLE IF EXISTS task_progress;
+DROP TABLE IF EXISTS cached_sources;
+DROP TABLE IF EXISTS code_challenges;
+DROP TABLE IF EXISTS lessons;
+DROP TABLE IF EXISTS quizzes;
+DROP TABLE IF EXISTS resources;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS steps;

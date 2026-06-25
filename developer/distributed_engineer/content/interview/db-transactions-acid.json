@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-tx-isolation-anomalies",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "A transaction reads a balance, decides a new limit, then writes it. Two run concurrently and one update is silently lost. Which isolation level prevents it, and what anomaly is this?",
+    "companies": "Backend / DB interviews",
+    "source_name": "PostgreSQL — Transaction Isolation",
+    "source_url": "https://www.postgresql.org/docs/current/transaction-iso.html",
+    "model_answer": "This is a **lost update** (a write-write conflict). Postgres default is **Read Committed**, which does NOT prevent it. **Repeatable Read** (snapshot isolation in PG) detects it and aborts one transaction with a serialization error; **Serializable** prevents the broader **write skew** too. Cheaper fixes without bumping isolation: do the math in SQL (`SET balance = balance - $1`) or `SELECT ... FOR UPDATE`. Know the anomaly ladder: dirty read → non-repeatable read → phantom → write skew, and which level stops each."
+  },
+  {
+    "slug": "iq-tx-serialization-retry",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "At SERIALIZABLE isolation your transaction fails with a serialization_failure error. Is that a bug? What must your code do?",
+    "companies": "Backend / DB interviews",
+    "source_name": "PostgreSQL — Serializable Isolation Level",
+    "source_url": "https://www.postgresql.org/docs/current/transaction-iso.html#XACT-SERIALIZABLE",
+    "model_answer": "Not a bug — it's by design. Serializable can't always allow both transactions, so it aborts one with SQLSTATE `40001`; the app must **retry the whole transaction** (with backoff, bounded attempts). So serializable code is always wrapped in a retry loop:\n\n```go\nfor attempt := 0; attempt < 5; attempt++ {\n  err := runTx(ctx)\n  if isSerializationFailure(err) { continue } // retry\n  return err\n}\n```\n\nThe transaction must be side-effect-free until commit (don't send the email mid-tx) so retrying is safe."
+  },
+  {
+    "slug": "iq-tx-savepoints",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "What are savepoints, and when are they useful inside a larger transaction?",
+    "companies": "Backend / DB interviews",
+    "source_name": "PostgreSQL — SAVEPOINT",
+    "source_url": "https://www.postgresql.org/docs/current/sql-savepoint.html",
+    "model_answer": "A SAVEPOINT is a nested rollback point: `SAVEPOINT s; ...; ROLLBACK TO s` undoes just the work since `s` without aborting the whole transaction. Useful when one step may fail acceptably (try an insert; on conflict roll back to the savepoint and take an alternate path) while keeping the surrounding transaction's other work. In pgx you get this via nested `tx.Begin` (it emulates savepoints). Caveat: a statement error in PG poisons the transaction until you roll back to a savepoint — so savepoints are how you recover and continue."
+  },
+  {
+    "slug": "iq-tx-2pc",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "You must atomically move money across two separate databases (shards). Why is a local transaction not enough, and what are the options?",
+    "companies": "Stripe, payments / distributed interviews",
+    "source_name": "microservices.io — Saga pattern",
+    "source_url": "https://microservices.io/patterns/data/saga.html",
+    "model_answer": "A single DB transaction can't span two databases. **Two-Phase Commit (2PC)** gives atomic cross-DB commit (prepare → commit) but is blocking and the coordinator is a SPOF — slow and fragile, so often avoided. The common alternative is the **Saga** pattern: a sequence of local transactions with compensating actions (debit A; if credit B fails, run a compensating credit-back to A), giving eventual consistency without distributed locks. Trade durability/atomicity for availability; idempotency keys (Step 4) make the steps safe to retry. This previews Step 7."
+  }
+]

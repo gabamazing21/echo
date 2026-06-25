@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-jh-walk-merged-pr",
+    "kind": "behavioral",
+    "difficulty": "medium",
+    "prompt": "Tell me about a contribution you made to an open-source project. What was the change and how did you get it merged?",
+    "companies": "Behavioral / all big-tech (collaboration in unfamiliar code)",
+    "source_name": "Tech Interview Handbook — Behavioral interviews",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview/",
+    "model_answer": "Use STAR. **Situation:** the project (etcd, NATS, etc.) and the small, bounded issue you picked. **Task:** what the fix needed to accomplish. **Action** is where you show maturity working in *someone else's* house: you read CONTRIBUTING.md first, kept the change minimal (no scope creep), added a test that fails before and passes after, and followed the project's commit/sign-off conventions. **Result:** the PR merged (or is under active review) — link it. Interviewers love this because it's external, verifiable proof you can navigate an unfamiliar codebase and work inside others' conventions and CI. Listen-fors: tiny-and-correct over ambitious-and-abandoned, respect for the project's process, and that you verified your change rather than asserting it works. Have the diff and the issue link ready. Even a docs or missing-test fix is a completely legitimate story — say so plainly rather than inflating it into something it wasn't."
+  },
+  {
+    "slug": "iq-jh-handle-review-feedback",
+    "kind": "behavioral",
+    "difficulty": "medium",
+    "prompt": "A maintainer asked you to change something in your PR that you disagreed with. What did you do?",
+    "companies": "Behavioral / all big-tech (taking feedback, ego management)",
+    "source_name": "Tech Interview Handbook — Behavioral rubrics",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview-rubrics/",
+    "model_answer": "This is a disagreement/collaboration probe, so demonstrate disagree-and-commit. STAR: describe the specific request, state your reasoning calmly *once* (with evidence, not just preference), then — since it's their project and their call — defer gracefully and make the change. The strong version shows you can hold a view without ego: 'I explained why I'd structured it that way, they had context I lacked about a downstream consumer, so I adopted their approach and learned something.' Interviewers listen for: receiving feedback without defensiveness, distinguishing a hill worth (briefly) defending from one to concede, and treating review as mentorship rather than gatekeeping. Avoid two traps — being a pushover who never reasons, and being someone who argues a maintainer in circles. The merge is the goal; 'good catch, fixed in a1b2c3d' is most of the job. If you genuinely changed their mind with evidence, that's a fine outcome to mention too."
+  },
+  {
+    "slug": "iq-jh-rejected-pr",
+    "kind": "behavioral",
+    "difficulty": "hard",
+    "prompt": "Tell me about a time your work was rejected — a PR closed, a proposal turned down. How did you handle it?",
+    "companies": "Behavioral / all big-tech (resilience, handling rejection)",
+    "source_name": "Tech Interview Handbook — Behavioral interviews",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview/",
+    "model_answer": "Pick a real rejection — a PR a maintainer closed as out-of-scope or duplicate — and own it without bitterness. STAR: the change you proposed, why it was declined (you understood their reasoning), and your *response*: you thanked them, extracted the lesson (check open PRs and the roadmap first, scope smaller, claim the issue earlier), and applied it to your next contribution, which merged. Interviewers test whether rejection makes you defensive or better; resilience and coachability are the signal. Listen-fors: no blame-shifting ('the maintainer was unfair'), a concrete lesson, and evidence you acted on it. Frame the rejection as data, not a verdict on you — exactly how you'd treat a tough code review or a job rejection. The growth arc is the whole point: a closed PR that taught you to contribute better is a stronger story than one that merged on the first try with nothing learned."
+  },
+  {
+    "slug": "iq-jh-unfamiliar-codebase",
+    "kind": "behavioral",
+    "difficulty": "medium",
+    "prompt": "How do you get productive in a large codebase you've never seen before?",
+    "companies": "Behavioral / all big-tech (ramp-up in unfamiliar code)",
+    "source_name": "Tech Interview Handbook — Behavioral interviews",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview/",
+    "model_answer": "Ground this in your OSS experience so it's concrete, not theoretical. Walk through your real process: get the test suite green *before* changing anything (it's a map of expected behavior), read the README and CONTRIBUTING.md, then narrow to the *one* area your task touches rather than trying to understand everything. Use tests and existing similar code as templates for conventions, and ask one *focused* question only when reading can't resolve it — never 'explain how this works,' which is homework. Interviewers listen for: a deliberate ramp-up strategy, restraint (you don't need the whole system to make one correct change), and respect for existing patterns over rewriting. Mention verifying via the project's own test command. This maps directly to onboarding at their company, which is why they ask — a candidate who can land a small correct change in a stranger's codebase is one who'll be productive in their first sprint."
+  }
+]

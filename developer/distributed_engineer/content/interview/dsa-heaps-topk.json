@@ -1,0 +1,43 @@
+[
+  {
+    "slug": "iq-heap-top-k-frequent",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Top K Frequent Elements: return the k most frequent values. Attempt in the checker.",
+    "companies": "Amazon, Meta, Google",
+    "source_name": "NeetCode 150 / LeetCode #347",
+    "source_url": "https://leetcode.com/problems/top-k-frequent-elements/",
+    "model_answer": "Count frequencies in a map, then select the top K. Heap approach: a size-K min-heap by frequency → O(n log K). Even better when counts are bounded: **bucket sort** by frequency (index = count) → O(n). Don't fully sort (O(n log n)). The canonical Top-K problem and a frequent closer.",
+    "challenge_slug": "top-k-frequent"
+  },
+  {
+    "slug": "iq-heap-kth-largest",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Kth Largest Element in an array.",
+    "companies": "Amazon, Meta, Microsoft",
+    "source_name": "NeetCode 150 / LeetCode #215",
+    "source_url": "https://leetcode.com/problems/kth-largest-element-in-an-array/",
+    "model_answer": "Two strong answers: (1) a size-K **min-heap** — push all, keep size K, the root is the Kth largest. O(n log K). (2) **Quickselect** (partition like quicksort but recurse into only one side) — O(n) average, O(1) extra, though O(n²) worst case. Mention both and the trade-off; interviewers often want quickselect for the optimal average bound."
+  },
+  {
+    "slug": "iq-heap-merge-k-lists",
+    "kind": "coding",
+    "difficulty": "hard",
+    "prompt": "Merge K sorted linked lists into one sorted list.",
+    "companies": "Amazon, Meta, Google, Microsoft",
+    "source_name": "NeetCode 150 / LeetCode #23",
+    "source_url": "https://leetcode.com/problems/merge-k-sorted-lists/",
+    "model_answer": "Min-heap of the K current heads: pop the smallest, append it, push its successor. O(N log K) for N total nodes — far better than concatenating + sorting (O(N log N)) or merging one-by-one (O(NK)). Alternative: divide-and-conquer pairwise merge, also O(N log K). This is the streaming-merge primitive behind external sort and LSM-tree compaction (Step 7)."
+  },
+  {
+    "slug": "iq-heap-median-stream",
+    "kind": "coding",
+    "difficulty": "hard",
+    "prompt": "Find Median from a Data Stream: support addNum and findMedian as numbers arrive.",
+    "companies": "Amazon, Google, Meta",
+    "source_name": "NeetCode 150 / LeetCode #295",
+    "source_url": "https://leetcode.com/problems/find-median-from-data-stream/",
+    "model_answer": "**Two heaps**: a max-heap for the lower half, a min-heap for the upper half, kept balanced in size (differ by ≤1). The median is the top of the larger heap (or the average of both tops when equal-sized). addNum is O(log n), findMedian O(1). The 'two heaps' technique is a signature hard-interview pattern — recognizing it is the test."
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-auth-refresh-tokens",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Access tokens should expire in ~15 min, but users shouldn't have to log in every 15 min. Design the refresh-token flow.",
+    "companies": "Auth0, Okta, backend interviews",
+    "source_name": "Auth0 — Refresh Tokens",
+    "source_url": "https://auth0.com/blog/refresh-tokens-what-are-they-and-when-to-use-them/",
+    "model_answer": "Issue a short-lived **access token** (JWT, ~15 min) plus a long-lived **refresh token** (opaque, stored server-side / in an HttpOnly cookie). When the access token expires, the client POSTs the refresh token to `/refresh` to get a new access token — no re-login. Security: rotate the refresh token on each use and detect reuse of an old one (token theft → revoke the family); store refresh tokens hashed; scope them per device. This decouples 'proof of identity' lifetime from session lifetime."
+  },
+  {
+    "slug": "iq-auth-jwt-revocation",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "A user's JWT is leaked. JWTs are stateless — how do you revoke it before it expires?",
+    "companies": "Security / backend interviews",
+    "source_name": "OWASP — JWT Cheat Sheet",
+    "source_url": "https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html",
+    "model_answer": "Pure stateless JWTs can't be revoked — that's the core trade-off. Options: (1) keep access tokens *very* short and revoke the refresh token (server-side store) so access dies within minutes; (2) maintain a denylist of revoked token IDs (`jti`) checked on each request (reintroduces state, but small); (3) per-user token version / `tokenVersion` claim — bump it on logout/compromise so all old tokens fail validation. Most systems combine short access tokens + revocable refresh tokens."
+  },
+  {
+    "slug": "iq-auth-csrf-cors",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "If you store the auth token in a cookie, what new attack appears, and how does it differ from CORS?",
+    "companies": "Security / web interviews",
+    "source_name": "OWASP — CSRF Cheat Sheet",
+    "source_url": "https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html",
+    "model_answer": "Cookies are sent automatically by the browser, so a malicious site can trigger authenticated requests = **CSRF**. Defenses: `SameSite=Lax/Strict` cookies, anti-CSRF tokens, and checking Origin. **CORS** is unrelated — it's the browser's rule for which origins may *read* cross-origin responses (it does NOT prevent CSRF; a permissive CORS policy can even widen exposure). Bearer-token-in-header auth sidesteps CSRF (the token isn't auto-sent) but is exposed to XSS instead. Know which threat each control addresses."
+  },
+  {
+    "slug": "iq-auth-password-reset",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Design a secure 'forgot password' flow. What are the security checks?",
+    "companies": "Security / backend interviews",
+    "source_name": "OWASP — Forgot Password Cheat Sheet",
+    "source_url": "https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html",
+    "model_answer": "Generate a high-entropy random token, store only its **hash** with a short expiry (e.g. 15–30 min) and single-use flag, and email a link containing the raw token. On submit: look up by hash, check unexpired+unused, set the new password (bcrypt), invalidate the token and existing sessions. Crucial: return the **same generic response** whether or not the email exists (no account enumeration), rate-limit requests, and don't log the token. These details are exactly what interviewers probe."
+  }
+]

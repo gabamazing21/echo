@@ -1,0 +1,30 @@
+{{define "content"}}
+<div class="eyebrow">The library</div>
+<h1 class="page">Resources</h1>
+<p class="lead">Every link you need, free unless flagged. The free spine — Tour of Go, Learn Go with Tests, CMU 15-445, MIT 6.824 — can carry you the whole way.</p>
+
+<div class="filters" id="resFilters">
+  <button class="chip on" data-rs="all">All</button>
+  {{range .Steps}}<button class="chip" data-rs="{{.ID}}">Step {{.ID}}</button>{{end}}
+  <button class="chip" data-free>Free only</button>
+  <input class="search" id="resSearch" placeholder="search resources…">
+</div>
+
+<div class="panel" id="resList">
+  {{range .Resources}}
+  <div class="res" data-step="{{.StepID}}" data-free="{{.IsFree}}" data-text="{{.Name}} {{.Why}}">
+    <div class="res-body">
+      <div class="res-nm"><a href="{{.Link}}" target="_blank" rel="noopener">{{.Name}} ↗</a></div>
+      <div class="res-why">{{.Why}}</div>
+      <div class="res-meta">
+        <span class="pill">Step {{.StepID}}</span>
+        <span class="pill">{{.Kind}}</span>
+        <span class="pill {{if .IsFree}}free{{else}}paid{{end}}">{{if .IsFree}}Free{{else}}Paid{{end}}</span>
+        <span class="pill">{{.TimeLabel}}</span>
+      </div>
+    </div>
+  </div>
+  {{end}}
+  <div class="res" id="resEmpty" style="display:none"><div class="res-body"><div class="res-why">Nothing matches that filter. Clear it and try again.</div></div></div>
+</div>
+{{end}}

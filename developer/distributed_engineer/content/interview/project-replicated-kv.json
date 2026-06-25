@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "iq-kv-dedup-lifecycle",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Walk through the full lifecycle of duplicate-request detection in a Raft-backed KV store: what the client tags, what the server stores, and exactly when each is updated.",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "Students' Guide to Raft (Jon Gjengset, 6.824 TA)",
+    "source_url": "https://thesquareplanet.com/blog/students-guide-to-raft/",
+    "model_answer": "**Client side:** each clerk has a unique `ClientID` and a monotonic per-client `Seq`. It tags every operation with `(ClientID, Seq)` and — critically — **reuses the same Seq on every retry** of the same logical operation, only advancing Seq once the op *succeeds*. So at most one in-flight request exists per client.\n\n**Server side:** a `lastSeq map[ClientID]Seq` recording the highest Seq applied per client. The rule lives **inside the apply loop**, the single place state mutates: when an op pops off `applyCh`, if `op.Seq > lastSeq[op.ClientID]`, apply the write and set `lastSeq[op.ClientID] = op.Seq`; otherwise it's a duplicate — skip the mutation (but still reply OK / return the stored result to any waiter).\n\nWhy in the apply loop and not the RPC handler? Because every replica runs the same apply loop over the same committed log in the same order, the dedup decision is **itself replicated and deterministic** — all nodes agree on which requests were duplicates. Deduping in the RPC handler would make leader and followers disagree, diverging state. This is idempotency enforced at the consensus boundary."
+  },
+  {
+    "slug": "iq-kv-snapshot-dedup",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "When you snapshot the KV map to compact the Raft log, why must the snapshot also include the dedup table? Trace the bug if you omit it.",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "MIT 6.824 — Lab 3 (Fault-tolerant KV)",
+    "source_url": "https://pdos.csail.mit.edu/6.824/",
+    "model_answer": "Because **the dedup table is part of the state machine's state**, not bookkeeping you can throw away. A snapshot's job is to capture *everything* needed to reconstruct the application at that log point so the entries below it can be discarded. If you snapshot only the `map[string]string` and not `lastSeq`, you've lost the memory of which client requests were already applied.\n\nBug trace: client C does `Append(\"x\",\"a\")` with Seq=7; it commits and applies, `x` becomes `…a`, and `lastSeq[C]=7`. The server snapshots **the map only** and discards the log entries. The server crashes and restarts from the snapshot — `lastSeq` is now empty. C, which never got its ack, retries the *same* `Append` Seq=7. The server sees `7 > lastSeq[C]` (which reset to 0), treats it as new, and applies again → `x` becomes `…aa`. The exactly-once guarantee is broken precisely across the restart you snapshotted to survive. Fix: serialize the map and the dedup table **together** into the snapshot, and restore both atomically on install."
+  },
+  {
+    "slug": "iq-kv-linearizable-reads",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "A follower-turned-stale-leader could answer a Get with old data. How do you make reads linearizable without writing every read to the Raft log, and what's the trade-off?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "etcd / Raft — ReadIndex and lease-based reads",
+    "source_url": "https://etcd.io/docs/latest/learning/api_guarantees/",
+    "model_answer": "The safe-but-slow approach is to push every Get through the log like a write — then it's ordered with all other ops and trivially linearizable, but you pay a full consensus round-trip per read. To avoid that, use **ReadIndex**: when a Get arrives, the leader (1) records its current `commitIndex` as the read index, (2) confirms it is *still* leader by exchanging one round of heartbeats with a majority — proving no newer leader has superseded it, which is the check a stale leader fails — and (3) waits until its state machine has applied up to that read index, then serves the read from local state. No log append, but one heartbeat round.\n\nThe trade-off: ReadIndex still needs that majority confirmation per read (or batch of reads). **Lease-based reads** go further — the leader serves reads locally with no network as long as it holds a time-bounded leadership lease — but this trades a clock assumption (bounded clock drift) for latency: a clock skew bug can let a deposed leader serve stale reads within its lease. ReadIndex is the safe default; leases are the latency optimization with a correctness caveat."
+  },
+  {
+    "slug": "iq-kv-wrong-op-at-index",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Your handler calls Start(), gets index 12, registers a waiter for index 12, and later something commits at index 12. Why is it wrong to just reply OK, and what must you check?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "MIT 6.824 — Lab 3 (Fault-tolerant KV)",
+    "source_url": "https://pdos.csail.mit.edu/6.824/",
+    "model_answer": "Because **the op that commits at index 12 might not be your op.** `Start()` only *proposes* an entry at a tentative index while you're leader; it does not guarantee that entry survives. If you lose leadership before index 12 commits, the new leader can place a **different** op at index 12 (Raft overwrites uncommitted tails). Your waiter then fires when *that* op applies, and if you blindly reply OK, you've told the client its request succeeded when a stranger's request actually ran there — a correctness violation.\n\nThe check: when the applier signals index 12, compare the **identity** of the committed op against what you submitted — match on `(ClientID, Seq)` (or a unique op id), not on the index alone. If they match, reply OK; if they differ, you lost leadership, so reply `ErrWrongLeader` and let the client retry on the real leader. Use a buffered waiter channel and clean up the `waiters` entry afterward so it doesn't leak, and time the handler out in case nothing ever commits at that index."
+  },
+  {
+    "slug": "iq-kv-kvmutex-raft-deadlock",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Why must you never hold the KV server's mutex while calling into Raft, and never let the apply loop block sending to a waiter?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "MIT 6.824 — Lab 3 (Fault-tolerant KV)",
+    "source_url": "https://pdos.csail.mit.edu/6.824/",
+    "model_answer": "Two independent deadlock traps, both about lock-ordering between the KV layer and Raft.\n\n**KV mutex across Raft calls:** `kv.rf.Start()` (and other Raft methods) take Raft's own internal mutex and may block. If you hold `kv.mu` while calling Raft, and the apply loop — which also needs `kv.mu` to apply committed entries — is waiting behind Raft's lock, you can build a cycle where Raft can't make progress because it needs the applier, and the applier can't run because it needs `kv.mu`, which you're holding while stuck in Raft. The whole server freezes. Rule: release `kv.mu` before calling into Raft.\n\n**Apply loop blocking on a waiter:** the applier must drain `applyCh` continuously — if it ever blocks sending a result to an RPC handler's waiter channel (because the handler already timed out and stopped reading), the apply loop stalls, no further entries get applied, and the server wedges. Fix: make waiter channels **buffered (size 1)** and have the applier do a non-blocking send (drop if no one's listening). The applier's only job is to keep applying; it must never wait on the application above it."
+  }
+]

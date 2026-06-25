@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-iface-implicit",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Explain implicit interface satisfaction in Go. Why is there no `implements` keyword, and what does that enable?",
+    "companies": "Common Go interviews",
+    "source_name": "Effective Go — interfaces",
+    "source_url": "https://go.dev/doc/effective_go#interfaces",
+    "model_answer": "A type satisfies an interface simply by having the right methods — no declaration. This is **structural typing**. It enables *decoupling*: you can define an interface next to the *consumer* and satisfy it with types from packages that never imported your interface (including the stdlib). It's why `io.Reader`/`io.Writer` compose so widely.\n\nDesign wisdom they listen for: 'accept interfaces, return structs', and keep interfaces small (1–2 methods). The empty interface `any` satisfies everything — use sparingly with type switches/assertions."
+  },
+  {
+    "slug": "iq-iface-pointer-receiver-set",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Why can a *pointer* to a type satisfy an interface while a value of that type doesn't, when the method has a pointer receiver?",
+    "companies": "Senior Go interviews",
+    "source_name": "Go spec — method sets",
+    "source_url": "https://go.dev/ref/spec#Method_sets",
+    "model_answer": "An interface holds a *method set*. The method set of value `T` includes only value-receiver methods; the method set of `*T` includes **both** value- and pointer-receiver methods. So if `M()` has a pointer receiver, only `*T` satisfies an interface requiring `M()` — a `T` value doesn't.\n\nGotcha: it compiles when you call `t.M()` directly (Go auto-takes `&t`), but **fails** when you assign a non-addressable `T` to the interface. Rule of thumb: be consistent — if any method needs a pointer receiver, give them all pointer receivers, and store/pass `*T`."
+  },
+  {
+    "slug": "iq-iface-reader-wrapper",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Design a type that wraps an io.Reader and counts the bytes read, composing with existing stdlib tools.",
+    "companies": "Infra / platform roles",
+    "source_name": "Go stdlib — io",
+    "source_url": "https://pkg.go.dev/io",
+    "model_answer": "Embed/hold the underlying `io.Reader` and implement `Read` to delegate and accumulate:\n\n```go\ntype CountingReader struct {\n    R io.Reader\n    N int64\n}\nfunc (c *CountingReader) Read(p []byte) (int, error) {\n    n, err := c.R.Read(p)\n    c.N += int64(n)\n    return n, err\n}\n```\n\nBecause it *is* an `io.Reader`, it drops into `io.Copy`, `bufio.NewReader`, `json.NewDecoder`, etc. unchanged. This 'decorator over a small interface' pattern is the heart of idiomatic Go composition — exactly what interviewers want to see instead of inheritance."
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-mvcc-lost-update-fixes",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Compare three ways to prevent a lost update: in-DB math, SELECT FOR UPDATE, and a version column. When is each best?",
+    "companies": "Backend / DB interviews",
+    "source_name": "PostgreSQL — Explicit Locking",
+    "source_url": "https://www.postgresql.org/docs/current/explicit-locking.html",
+    "model_answer": "(1) **In-DB math** (`UPDATE ... SET n = n + $1`): simplest and safe when the new value is a function of the old — the row is locked for the statement; use whenever possible. (2) **SELECT FOR UPDATE** (pessimistic): lock the row on read, then compute in app, then write — for read-decide-write logic; cost is contention + deadlock risk. (3) **Version column** (optimistic): `UPDATE ... WHERE version=$old`, retry if 0 rows — best for low-contention, read-heavy paths (no locks held). Choose by contention level and whether the new value needs app logic."
+  },
+  {
+    "slug": "iq-mvcc-deadlock",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Two transactions update the same two rows in opposite order and deadlock. How does Postgres handle it, and how do you prevent it?",
+    "companies": "Backend / DB interviews",
+    "source_name": "PostgreSQL — Deadlocks",
+    "source_url": "https://www.postgresql.org/docs/current/explicit-locking.html#LOCKING-DEADLOCKS",
+    "model_answer": "Postgres detects the cycle and aborts one transaction with a deadlock error (`40P01`); your app retries it. Prevent it by acquiring locks in a **consistent order everywhere** (e.g. always lock the lower id first), keeping transactions short, and touching rows in a deterministic sequence. This is the DB twin of the mutex lock-ordering rule from Step 5. Don't rely on detection as a strategy — it's a safety net; consistent ordering is the fix."
+  },
+  {
+    "slug": "iq-mvcc-readers-writers",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "How does Postgres let readers not block writers (and vice versa)? What's the cost of that design?",
+    "companies": "Backend / DB interviews",
+    "source_name": "PostgreSQL — MVCC",
+    "source_url": "https://www.postgresql.org/docs/current/mvcc-intro.html",
+    "model_answer": "**MVCC**: each write creates a *new row version* instead of overwriting; each transaction sees a consistent snapshot as of its start, so a `SELECT` reads the version visible to it while an `UPDATE` writes a new one — readers and writers don't block each other. Writers still conflict with other writers on the same row. Costs: old versions ('dead tuples') accumulate and must be cleaned by **VACUUM** (table bloat if it falls behind), and long-running transactions hold back cleanup. This is also how PG implements snapshot isolation."
+  },
+  {
+    "slug": "iq-mvcc-atomic-increment",
+    "kind": "sql",
+    "difficulty": "easy",
+    "prompt": "Two processes both run `balance = balance + amount`. Done as `UPDATE ... SET balance = balance + $1`, is it safe under concurrency? Why?",
+    "companies": "Backend / DB interviews",
+    "source_name": "PostgreSQL — UPDATE",
+    "source_url": "https://www.postgresql.org/docs/current/sql-update.html",
+    "model_answer": "Yes. A single `UPDATE accounts SET balance = balance + $1 WHERE id=$2` takes a row lock for the duration of the statement, so concurrent increments serialize — the second waits, then applies on top of the first. No lost update. The unsafe version is reading the balance into the app, adding in Go, and writing back (read-modify-write) — that races. Rule: push the arithmetic into the DB statement whenever the new value derives from the old."
+  }
+]

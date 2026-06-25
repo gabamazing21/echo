@@ -1,0 +1,57 @@
+[
+  {
+    "slug": "iq-quorum-intersection",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "In Raft, why does requiring a majority quorum guarantee at most one leader per term? Use the math to explain, and say why clusters are sized 3, 5, 7 rather than 4 or 6.",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "Raft Paper — In Search of an Understandable Consensus Algorithm",
+    "source_url": "https://raft.github.io/raft.pdf",
+    "model_answer": "A **majority** of N nodes is any set of size **floor(N/2)+1**. Take any two majorities of the same cluster: their sizes sum to more than N, so by the **pigeonhole principle** they must share at least one node. That overlap is the whole trick.\n\n- **One leader per term:** winning an election needs votes from a majority. Each node votes for at most one candidate per term. Two distinct majorities overlap in a node, but that node only voted once — so two candidates can't both collect majorities in the same term. At most one leader.\n- **Committed entries survive:** any committed entry lives on a majority, and any future leader was elected by a majority, so the two sets intersect — the new leader has the entry.\n\n**Odd sizing:** with N=4, majority is 3, tolerating 1 failure — exactly what N=3 tolerates, but with an extra machine to fail. Fault tolerance is **floor(N/2)**: 3→1, 5→2, 7→3. Even N buys nothing, so odd is standard.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-fault-tolerance-even-odd",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "A teammate proposes growing the Raft cluster from 3 nodes to 4 to 'improve reliability.' Is that a good idea? How many simultaneous failures does each tolerate, and why?",
+    "companies": "Distributed systems / infra interviews (etcd, Consul, CockroachDB use Raft)",
+    "source_name": "Raft Paper — In Search of an Understandable Consensus Algorithm",
+    "source_url": "https://raft.github.io/raft.pdf",
+    "model_answer": "It does **not** help — and arguably hurts. Raft makes progress only while a **majority** (floor(N/2)+1) is alive and reachable.\n\n- **N=3:** majority = 2, tolerates **1** failure.\n- **N=4:** majority = 3, tolerates **1** failure.\n\nSo a 4-node cluster survives the *same* single failure as a 3-node one, while adding a fourth machine that can itself fail and a fourth replica to coordinate. Worse, with even N a clean 2-2 partition leaves **neither** side with a majority, so the cluster stalls. The fault-tolerance formula is **floor(N/2)**: 3→1, 5→2, 7→3 — each tolerated failure costs **two** added nodes. To actually tolerate 2 failures you must go to **5**, not 4. That is exactly why production Raft clusters are odd-sized (3/5/7). The right reason to add nodes is read scaling or availability-zone spread, not the failure count — and you add them in odd increments.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-raft-figure8-commit",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Explain the Figure 8 hazard in Raft: why can't a leader commit a log entry from a previous term just because it has been replicated to a majority? Describe the exact bug and the rule that fixes it.",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "Raft Paper — In Search of an Understandable Consensus Algorithm",
+    "source_url": "https://raft.github.io/raft.pdf",
+    "model_answer": "**'Replicated to a majority' is not 'committed.'** Figure 8 (§5.4.2) shows the trap: leader S1 (term 2) writes an entry at index i and replicates it to a *minority*. S1 dies; later it's re-elected (term 4) and now pushes that old term-2 entry to a **majority**. Naively it looks committed. But S1 can crash again, and a *different* node with a higher-term entry at index i — one that was never told about the old entry — can win the next election (its log is at least as up-to-date) and **overwrite** index i. An entry that briefly sat on a majority gets clobbered. If we'd told a client it was committed, we'd have violated safety.\n\n**The fix:** a leader may only mark an entry committed by **replica-counting if the entry is from its own current term.** Entries from earlier terms are committed **indirectly** — only once a current-term entry above them reaches a majority (the Log Matching property then carries the earlier ones along). This closes the hole.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-partitioned-leader",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "A 5-node Raft cluster splits into a 2-node partition (containing the current leader) and a 3-node partition. Walk through what each side does, what happens to client writes, and what occurs when the network heals.",
+    "companies": "Distributed systems / infra interviews (etcd, Kubernetes)",
+    "source_name": "The Raft Consensus Algorithm (raft.github.io)",
+    "source_url": "https://raft.github.io/",
+    "model_answer": "**Minority side (2 nodes, old leader, term T):** the leader keeps accepting client commands and appending them to its log, but it can never reach a majority of 3 — so it **never commits** them and never acks the client. Those writes pile up uncommitted.\n\n**Majority side (3 nodes):** they stop hearing heartbeats, an election timeout fires, a candidate increments to term **T+1**, collects 3 votes, and becomes the new leader. With a majority it serves reads and writes normally; the cluster stays available.\n\n**On heal:** messages cross the partition. The old leader sees a higher term (T+1) — either in an AppendEntries from the new leader or a RequestVote — and immediately **steps down to follower**, adopting T+1. Its uncommitted minority-side entries conflict with the new leader's log, so the consistency check rejects them and they're **overwritten/discarded** — correctly, since they were never committed. No split brain, no lost committed data: Raft is **CP**, sacrificing the minority's availability to preserve consistency.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-raft-loses-quorum",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "What happens to a Raft cluster when it can no longer reach a majority of nodes (e.g., 3 of 5 nodes are down)? Frame your answer in CAP terms and explain the design choice.",
+    "companies": "Distributed systems / infra interviews (etcd, CockroachDB)",
+    "source_name": "Raft Paper — In Search of an Understandable Consensus Algorithm",
+    "source_url": "https://raft.github.io/raft.pdf",
+    "model_answer": "The cluster **stops serving writes** (and linearizable reads). With only 2 of 5 nodes, no candidate can collect 3 votes, so no leader can be elected — or if a leader survives, it can't replicate any entry to a majority, so nothing ever commits. The cluster is effectively frozen for writes until a majority is restored.\n\nIn **CAP** terms, Raft is **CP**: under a partition or mass failure it chooses **Consistency** over **Availability**. It would rather refuse progress than risk two leaders committing divergent histories. This is deliberate — consensus systems back metadata (etcd backing Kubernetes, CockroachDB's range leases) where a wrong answer is far worse than a slow one.\n\nPractical implications: spread nodes across failure domains so you don't lose a majority at once; remember an **even** split is the danger case; and recovery is simply 'bring a majority back online,' after which the surviving committed log is intact and a leader can be elected.",
+    "challenge_slug": ""
+  }
+]

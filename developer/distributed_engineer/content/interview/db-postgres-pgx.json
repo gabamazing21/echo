@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-pgx-pool-exhaustion",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Your pool has MaxConns=10 but 1000 concurrent requests arrive. What happens, and how do you diagnose and tune it?",
+    "companies": "Backend / infra interviews",
+    "source_name": "PostgreSQL Wiki — Number Of Database Connections",
+    "source_url": "https://wiki.postgresql.org/wiki/Number_Of_Database_Connections",
+    "model_answer": "Requests beyond 10 block waiting to acquire a connection (until their ctx deadline → error). That's usually *correct* — Postgres performs best with a small pool (more connections ≠ more throughput; each backend is a process). Diagnose via pool stats (`pool.Stat()`: AcquireCount, EmptyAcquireCount, canceled acquires) and DB `pg_stat_activity`. Tune MaxConns to roughly `((cores * 2) + effective_spindles)` per the classic formula, add `MaxConnIdleTime`/`MaxConnLifetime`, and put a connection pooler (PgBouncer) in front for very high concurrency."
+  },
+  {
+    "slug": "iq-pgx-statement-timeout",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "How do you stop a runaway query from holding a connection forever? Give both the Go-side and DB-side levers.",
+    "companies": "Backend / infra interviews",
+    "source_name": "PostgreSQL docs — Client Connection Defaults",
+    "source_url": "https://www.postgresql.org/docs/current/runtime-config-client.html",
+    "model_answer": "Go side: pass a `context.WithTimeout` into `pool.Query(ctx, ...)` — pgx cancels the query when ctx fires. DB side: set `statement_timeout` (per-session `SET statement_timeout='2s'` or in the connection string) so the *server* aborts long statements even if the client misbehaves. Use both: ctx for request-scoped cancellation, `statement_timeout` as a backstop. Also `idle_in_transaction_session_timeout` to kill forgotten open transactions."
+  },
+  {
+    "slug": "iq-pgx-create-index-concurrently",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "You must add an index to a 500M-row table in production without taking it down. How?",
+    "companies": "Amazon, Google, infra interviews",
+    "source_name": "PostgreSQL docs — CREATE INDEX",
+    "source_url": "https://www.postgresql.org/docs/current/sql-createindex.html#SQL-CREATEINDEX-CONCURRENTLY",
+    "model_answer": "A plain `CREATE INDEX` takes an `ACCESS EXCLUSIVE`-style lock that blocks writes for the whole build — unacceptable on a hot table. Use `CREATE INDEX CONCURRENTLY`: it builds without blocking reads/writes (two table scans, slower, can't run inside a transaction, and can leave an INVALID index on failure that you must drop and retry). This 'online migration' awareness is a strong senior signal. Same idea: add NOT NULL / columns in non-blocking steps."
+  },
+  {
+    "slug": "iq-pgx-error-types",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Beyond pgx.ErrNoRows, how do you detect a specific failure like a unique-constraint violation and turn it into the right HTTP status?",
+    "companies": "Backend / Go interviews",
+    "source_name": "PostgreSQL — Error Codes (SQLSTATE)",
+    "source_url": "https://www.postgresql.org/docs/current/errcodes-appendix.html",
+    "model_answer": "Use `errors.As` to extract a `*pgconn.PgError` and switch on its SQLSTATE `Code`: `23505` = unique_violation → 409 Conflict; `23503` = foreign_key_violation → 409/422; `23502` = not_null_violation → 400. `errors.Is(err, pgx.ErrNoRows)` → 404.\n\n```go\nvar pgErr *pgconn.PgError\nif errors.As(err, &pgErr) && pgErr.Code == \"23505\" { return c.JSON(409, ...) }\n```\n\nMapping DB errors to honest status codes (not blanket 500s) is what they're checking."
+  }
+]

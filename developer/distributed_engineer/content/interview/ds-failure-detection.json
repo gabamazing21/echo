@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-fd-slow-vs-dead",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Your system has N nodes; one is GC-paused but not dead. How do you detect failure, and when do you declare a node dead?",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "DDIA Ch.8 — Unreliable Networks",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "You fundamentally **can't** distinguish slow from dead in an async network — every detector trades **false positives** (evicting a slow-but-live node → needless failover/churn) against **detection latency** (taking too long to notice a real death → unavailability). Use periodic **heartbeats** + a timeout, **randomized** so nodes don't all decide at once, and require a few **indirect probes** before suspecting (rules out a one-off blip). Pick the timeout from your tolerance for each error — there's no setting that eliminates both."
+  },
+  {
+    "slug": "iq-fd-phi-accrual",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "What's wrong with a fixed heartbeat timeout, and how does phi-accrual failure detection improve on it?",
+    "companies": "Cassandra, Akka, infra interviews",
+    "source_name": "Akka — Phi Accrual Failure Detector",
+    "source_url": "https://doc.akka.io/docs/akka/current/typed/failure-detector.html",
+    "model_answer": "A fixed timeout is a hard yes/no that can't adapt: too short and a transient slowdown causes false positives; too long and detection lags. **Phi-accrual** outputs a continuous *suspicion level* (φ) from the statistical distribution of recent heartbeat inter-arrival times, and the app chooses a φ threshold. It **adapts**: when the network is temporarily slow, the bar to declare death rises automatically. Used by Cassandra and Akka. The win is separating measurement (φ) from the policy decision (threshold)."
+  },
+  {
+    "slug": "iq-fd-swim",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "All-to-all heartbeats are O(N²). How do you do scalable cluster membership/failure detection for thousands of nodes?",
+    "companies": "HashiCorp (Consul/Serf), infra interviews",
+    "source_name": "SWIM paper",
+    "source_url": "https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf",
+    "model_answer": "Use **SWIM gossip**: each node periodically pings a *random* peer; if no ack, it asks k other nodes to ping that peer **indirectly** (filtering one-off network blips) before suspecting it; membership changes are **gossiped** around the cluster. Detection load is ~constant per node instead of O(N²), and indirect probing slashes false positives. HashiCorp Serf/Consul use it. Pair detection with **fencing tokens** so a wrongly-suspected node that's only slow can't corrupt state when it resumes."
+  }
+]

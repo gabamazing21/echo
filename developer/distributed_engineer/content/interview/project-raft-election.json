@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "iq-raftel-randomized-timeouts",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Why are Raft election timeouts randomized? Walk through what happens with fixed timeouts.",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "In Search of an Understandable Consensus Algorithm (Raft paper), §5.2",
+    "source_url": "https://raft.github.io/raft.pdf",
+    "model_answer": "Randomization breaks **split votes**. If every follower used the same fixed timeout, then when the leader dies they'd *all* time out at nearly the same instant, all become candidates in the same new term, and all vote for themselves. Each candidate gets roughly its own vote, nobody reaches a majority, everyone times out again, and the cluster can livelock — repeatedly splitting the vote and never electing a leader.\n\nWith timeouts drawn randomly from a range (e.g. 150–300 ms), one follower almost always times out first, becomes candidate, and collects votes before the others wake up — so a single leader emerges quickly. The key constraints: the range must be **wide enough** that the gap between the first and second waker exceeds one round-trip (so the first candidate's RequestVotes land before the second times out), and you must draw a **fresh** random value on every reset, not once at startup. The heartbeat interval must stay well below the minimum timeout so a healthy leader keeps everyone's timer from firing at all."
+  },
+  {
+    "slug": "iq-raftel-step-down",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "A leader receives a message (request or reply) carrying a term higher than its own. What must it do, and why is this the single most important rule in Raft?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "In Search of an Understandable Consensus Algorithm (Raft paper), Figure 2 'Rules for Servers'",
+    "source_url": "https://raft.github.io/raft.pdf",
+    "model_answer": "It must immediately **revert to follower**, adopt the higher term as its `currentTerm`, and reset `votedFor`. This applies to *any* server in *any* state, on *any* RPC — both incoming requests and the replies to RPCs it sent.\n\nThis is central because **terms are Raft's logical clock and a higher term always wins.** A higher term means an election happened that this leader didn't witness — it is stale, possibly partitioned off. By stepping down it guarantees there is never more than one leader acting in a given term: the old leader stops issuing AppendEntries the moment it learns a newer term exists. If you skip this — say you only check terms on requests but ignore the term in a *reply* — a deposed leader keeps heartbeating, two leaders coexist, and the safety property that the whole algorithm rests on collapses. In the labs, missing the reply-side check is a classic cause of two-leader test failures."
+  },
+  {
+    "slug": "iq-raftel-stale-leader",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "A network partition isolates the leader with a minority of nodes. Clients keep talking to it. Why doesn't this corrupt the cluster, even before the leader realizes it's been deposed?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "In Search of an Understandable Consensus Algorithm (Raft paper), §5",
+    "source_url": "https://raft.github.io/raft.pdf",
+    "model_answer": "The stale leader is **harmless because it can't commit anything.** Committing requires replicating an entry to a **majority**, but the isolated leader only reaches a minority — so its AppendEntries never gather a quorum and `commitIndex` never advances. Entries pile up in its local log uncommitted; they are never applied, never acknowledged as durable to clients.\n\nMeanwhile the majority partition holds an election (its members' timers fire, no heartbeats arrive), elects a new leader in a **higher term**, and serves clients normally. When the partition heals, the old leader receives a message with that higher term, steps down, and Raft's log-consistency check forces it to discard its uncommitted tail to match the new leader. So the worst the stale leader can do is accept writes that quietly evaporate — never acknowledge data that later disappears. (For *reads*, a naive stale leader can serve stale data, which is why linearizable reads need a ReadIndex/lease check — but it can never violate write safety.)"
+  },
+  {
+    "slug": "iq-raftel-lock-across-rpc",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "In your Lab 2A code, why must you never hold the Raft mutex across an outbound RPC call, and what do you do instead?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "Students' Guide to Raft (Jon Gjengset, 6.824 TA)",
+    "source_url": "https://thesquareplanet.com/blog/students-guide-to-raft/",
+    "model_answer": "Holding the lock across `Call` causes **deadlock and lost liveness**. An RPC can take arbitrarily long (the harness injects delays, drops, partitions). While you hold `rf.mu` waiting on the network, every other goroutine that needs the lock — the ticker, the AppendEntries handler, the RequestVote handler — blocks. A peer trying to RPC *you* can't be served, and two peers can wedge each other into the four-way deadlock the Students' Guide describes; the whole cluster freezes and the test hangs.\n\nThe discipline: **lock, read the few values you need into locals, unlock, do the network Call, then re-lock to apply the reply.** Critically, after re-locking you must **re-validate the world**: confirm you're still a Candidate in the *same* term you started the election in (`rf.state == Candidate && rf.currentTerm == startTerm`) before counting the vote — you may have stepped down or the term may have moved while the RPC was in flight. Acting on a stale reply under a re-acquired lock is how you elect two leaders."
+  },
+  {
+    "slug": "iq-raftel-majority-quorum",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Why does Raft require a strict majority to elect a leader rather than, say, the first node to get any vote? And why do many deployments run an odd number of nodes?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "In Search of an Understandable Consensus Algorithm (Raft paper), §5.2 and §5.4",
+    "source_url": "https://raft.github.io/raft.pdf",
+    "model_answer": "A majority is required so that **any two majorities overlap in at least one node.** That overlap is what guarantees at most one leader per term (two candidates can't both win — they'd need to share a voter, but each node votes once per term) and that a newly elected leader's quorum contains someone who saw the latest committed entry. Quorum overlap is the mathematical core of Raft's safety. A weaker rule like \"first vote wins\" gives no overlap guarantee, so partitions could produce two leaders.\n\nOdd cluster sizes are about **fault tolerance per node**, not safety. With 2f+1 nodes you tolerate f failures. Five nodes (majority 3) tolerate 2 failures; six nodes (majority 4) *also* tolerate only 2 — the extra node buys no extra failure tolerance but adds latency (a larger quorum to wait for) and another machine to lose. So odd sizes give the best resilience-per-cost; even sizes just raise the quorum threshold without raising the failures you can survive."
+  }
+]

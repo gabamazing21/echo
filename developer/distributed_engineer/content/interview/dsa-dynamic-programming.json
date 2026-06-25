@@ -1,0 +1,53 @@
+[
+  {
+    "slug": "iq-dp-climbing-stairs",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Climbing Stairs: how many distinct ways to climb n steps taking 1 or 2 at a time? Your first tabulation — attempt in the checker.",
+    "companies": "Amazon, Adobe, Apple",
+    "source_name": "NeetCode 150 / LeetCode #70",
+    "source_url": "https://leetcode.com/problems/climbing-stairs/",
+    "model_answer": "It's Fibonacci: `ways(n) = ways(n-1) + ways(n-2)` (last step was a 1 or a 2). State `dp[i]` = ways to reach step i; base `dp[0]=dp[1]=1`. O(n) time, and O(1) space with two rolling variables. The canonical 'recognize the recurrence' DP starter — say the recurrence out loud before coding.",
+    "challenge_slug": "climbing-stairs"
+  },
+  {
+    "slug": "iq-dp-coin-change",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Coin Change: fewest coins to make amount A from given denominations (or -1 if impossible).",
+    "companies": "Amazon, Google, Uber",
+    "source_name": "NeetCode 150 / LeetCode #322",
+    "source_url": "https://leetcode.com/problems/coin-change/",
+    "model_answer": "State `dp[a]` = fewest coins for amount `a`; recurrence `dp[a] = 1 + min(dp[a-c])` over coins `c ≤ a`; base `dp[0]=0`, init others to infinity. Answer `dp[A]` (or -1 if still infinity). O(A·#coins). Classic unbounded-knapsack-flavored DP; the trap is the greedy approach (take biggest coin first), which fails for denominations like {1,3,4} making 6."
+  },
+  {
+    "slug": "iq-dp-lcs",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Longest Common Subsequence of two strings.",
+    "companies": "Amazon, Google, Microsoft",
+    "source_name": "NeetCode 150 / LeetCode #1143",
+    "source_url": "https://leetcode.com/problems/longest-common-subsequence/",
+    "model_answer": "The archetypal **two-sequence** DP. `dp[i][j]` = LCS of `a[:i]` and `b[:j]`. If `a[i-1]==b[j-1]`: `dp[i][j] = 1 + dp[i-1][j-1]`; else `max(dp[i-1][j], dp[i][j-1])`. O(m·n). This pattern generalizes to edit distance, diff tools, and DNA alignment — recognizing 'two strings → 2-D prefix DP' is the skill."
+  },
+  {
+    "slug": "iq-dp-house-robber",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "House Robber: max sum of non-adjacent elements in an array.",
+    "companies": "Amazon, LinkedIn",
+    "source_name": "NeetCode 150 / LeetCode #198",
+    "source_url": "https://leetcode.com/problems/house-robber/",
+    "model_answer": "1-D DP: at each house choose to rob (value + best up to i-2) or skip (best up to i-1): `dp[i] = max(dp[i-1], dp[i-2] + nums[i])`. O(n) time, O(1) space with two variables. The follow-up 'House Robber II' (houses in a circle) is solved by running it twice — exclude first, then exclude last — and taking the max."
+  },
+  {
+    "slug": "iq-dp-edit-distance",
+    "kind": "coding",
+    "difficulty": "hard",
+    "prompt": "Edit Distance: min insert/delete/replace operations to turn word1 into word2.",
+    "companies": "Google, Amazon, Meta",
+    "source_name": "NeetCode 150 / LeetCode #72",
+    "source_url": "https://leetcode.com/problems/edit-distance/",
+    "model_answer": "Two-sequence DP. `dp[i][j]` = edits to convert `a[:i]`→`b[:j]`. If chars match, `dp[i][j]=dp[i-1][j-1]`; else `1 + min(dp[i-1][j]` delete, `dp[i][j-1]` insert, `dp[i-1][j-1]` replace`)`. Base: `dp[i][0]=i`, `dp[0][j]=j`. O(m·n). Powers spell-check and diffs; a top-tier hard-DP discriminator. Be ready to explain each of the three transitions."
+  }
+]

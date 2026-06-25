@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "iq-sd-design-twitter",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Design Twitter. Run the framework end-to-end. Follow-up: it's working at small scale — now design the home timeline for a user who follows 2,000 accounts, some with 50M followers.",
+    "companies": "Meta, X (Twitter), LinkedIn",
+    "source_name": "System Design Primer — Design the Twitter timeline and search",
+    "source_url": "https://github.com/donnemartin/system-design-primer/blob/master/solutions/system_design/twitter/README.md",
+    "model_answer": "Requirements: post a tweet, follow users, view a home timeline (read-heavy). Estimate: assume ~100M DAU, ~100M tweets/day ≈ 1.2k writes/s, timeline reads 10–100× that. API: POST /tweets, GET /timeline?cursor. Data: tweets(id, user_id, body, ts) partitioned by user_id; a follow graph; a per-user timeline cache. High-level: write service → fan-out service → per-user timeline lists in Redis; read service serves the precomputed list. Scale: the central decision is fan-out-on-write (push each tweet into followers' timelines — fast reads, costly for celebrities) vs fan-out-on-read (pull at request time — cheap writes, slow reads). The accepted answer is a hybrid: fan-out-on-write for normal users, fan-out-on-read for celebrity accounts, merged at read time. Trade-offs: timeline staleness is acceptable (lean AP), celebrity fan-out is the hot-key bottleneck, and the follow-graph partitioning drives query cost. State the read/write ratio first — it justifies the whole caching/fan-out design."
+  },
+  {
+    "slug": "iq-sd-scale-to-millions",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Start with a single web server and one database, then iteratively scale it to tens of millions of users. Follow-up: at each step, what symptom forces the next change?",
+    "companies": "System design interviews",
+    "source_name": "System Design Primer — Design a system that scales to millions of users on AWS",
+    "source_url": "https://github.com/donnemartin/system-design-primer/blob/master/solutions/system_design/scaling_aws/README.md",
+    "model_answer": "This question tests the framework's step 6 (deep-dive & scale) as an explicit progression. Start: one box runs app + DB. Symptom-driven evolution: (1) box saturates → split web and DB tiers; (2) DB read load rises → add a cache (cache-aside) and read replicas; (3) single web server is a SPOF and a throughput cap → put stateless app servers behind a load balancer and scale horizontally; (4) static assets dominate bandwidth → push them to a CDN; (5) one DB can't hold the data/writes → shard by a sensible key; (6) slow synchronous work blocks requests → move it to a queue + async workers. The senior move is naming the *symptom* (latency, CPU, disk, SPOF) that triggers each step rather than reciting the list — and continuously re-estimating QPS as the design grows. Trade-offs: every layer adds operational complexity and a new consistency wrinkle (replica lag, cache staleness); add only what the numbers justify."
+  },
+  {
+    "slug": "iq-sd-now-scale-10x",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "You've finished a design and the interviewer says 'now make it handle 10x the traffic.' Walk through how you re-evaluate without throwing the design away.",
+    "companies": "System design interviews",
+    "source_name": "System Design Primer — Back-of-the-envelope & study guide",
+    "source_url": "https://github.com/donnemartin/system-design-primer#back-of-the-envelope-calculations",
+    "model_answer": "Treat '10x' as a forcing function, not a panic. First, re-run the back-of-the-envelope numbers at 10x: which resource crosses a limit first — read QPS, write QPS, storage, bandwidth, or connection count? Name that bottleneck out loud; it dictates the move. Read-bound → deeper caching, more replicas, CDN. Write-bound → shard the write path, batch, or buffer behind a queue. Storage-bound → partition and tier cold data. Then check what *breaks* as a side effect: a new SPOF, hotter keys, worse replica lag, cache stampede. State the consistency cost of each fix. The skill being scored is continuous re-evaluation: you don't redesign from scratch, you locate the next constraint, apply the matching tool from your toolbox, and re-estimate again — the same loop the framework runs at every scale. Close by saying what would break first at 100x."
+  },
+  {
+    "slug": "iq-sd-design-pastebin",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Design Pastebin. Follow-up: how does it differ from a URL shortener, and how would you expire pastes?",
+    "companies": "System design interviews",
+    "source_name": "System Design Primer — Design Pastebin.com (or Bit.ly)",
+    "source_url": "https://github.com/donnemartin/system-design-primer/blob/master/solutions/system_design/pastebin/README.md",
+    "model_answer": "A clean framework rehearsal. Requirements: create a paste (store arbitrary text + return a short URL), read a paste by key, optional expiry; read-heavy. Estimate: modest writes, reads 10–100× higher; size storage by paste size × volume × retention. API: POST /pastes → {key, url}; GET /{key} → contents. Data: a key→path mapping in a small table or KV store, with the *paste body itself* in an object store (S3) rather than the DB — this is the key difference from a URL shortener, which only stores a short long-URL string. Generate keys via hashing or a key-generation service; handle collisions. High-level: LB → stateless app → cache → KV store + object store. Scale: cache hot pastes, CDN the read path, shard by key. Expiry: store expires_at and lazily skip/garbage-collect expired pastes (a background sweep), or use the store's native TTL. Trade-offs: 301 vs 302, eventual consistency on reads, cache vs object-store fetch cost."
+  },
+  {
+    "slug": "iq-sd-clarify-vague-prompt",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "The interviewer says only 'Design Instagram' and goes quiet. What are the first five minutes? Follow-up: what happens to your time budget if you skip this?",
+    "companies": "System design interviews",
+    "source_name": "System Design Primer — How to approach a system design interview question",
+    "source_url": "https://github.com/donnemartin/system-design-primer#how-to-approach-a-system-design-interview-question",
+    "model_answer": "Do not draw. Spend the first ~5 minutes converting the two-word prompt into a written, agreed problem. Drive it: 'Let me scope this — core features are upload a photo, view a feed, follow users; I'll defer stories, DMs, and search unless you want them.' Separate functional (what it does) from non-functional (scale, latency, availability, consistency, read/write ratio) and *write the numbers down*: assume 500M DAU, heavily read-skewed. Confirm the assumptions out loud and invite correction — 'stop me if that's wrong.' This both narrows the design and signals judgement. Time budget in a 45-min interview: ~5 clarify, ~5 estimate, ~5 API/data, ~10 high-level, ~10 deep-dive, ~5 trade-offs. Skipping clarification is the classic failure: you design the wrong system, the interviewer redirects you 20 minutes in, and you never recover the time. Scoping isn't preamble — it's where the interview is won."
+  }
+]

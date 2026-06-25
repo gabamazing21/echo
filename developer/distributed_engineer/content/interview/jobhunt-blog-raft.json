@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-jh-explain-consensus-simply",
+    "kind": "behavioral",
+    "difficulty": "medium",
+    "prompt": "Your blog explains Raft. Explain distributed consensus to me as if I'd never heard of it — in plain language.",
+    "companies": "Behavioral / all big-tech (communication & teaching signal)",
+    "source_name": "Tech Interview Handbook — Behavioral interviews",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview/",
+    "model_answer": "This tests whether you truly understand the thing — clear explanation is impossible to fake. Start from the *problem*, not the algorithm: a group of machines that can crash and whose messages can be dropped or reordered must still all agree on the same ordered list of events. Use an analogy (a team deciding by majority vote, where any two majorities share a member, so they can't approve two conflicting decisions). Then the one big idea: elect a single leader and route every change through it. Resist jargon until you've earned it — introduce 'term' or 'log' only after the intuition lands. Interviewers listen for: structure (problem→idea→detail), calibrating to the listener, and choosing the *right* simplification without saying anything false. The trap is performing depth with vocabulary; the win is making a hard idea feel obvious. Pause to check understanding, as you would explaining a design to a teammate."
+  },
+  {
+    "slug": "iq-jh-defend-writing",
+    "kind": "behavioral",
+    "difficulty": "hard",
+    "prompt": "In your post you claim randomized election timeouts are necessary. I'm not convinced — defend that, and tell me when you'd be wrong.",
+    "companies": "Behavioral / all big-tech (defending a claim under challenge)",
+    "source_name": "Tech Interview Handbook — Behavioral rubrics",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview-rubrics/",
+    "model_answer": "First *understand the objection* before defending — restate it so they know you heard it. Then make the actual argument: identical fixed timeouts make candidates time out together, split the vote, and repeat, so randomization breaks the symmetry and lets one candidate get ahead and win a majority. Crucially, the question asks for the *limits* of your claim — strong candidates volunteer them: randomization reduces but doesn't eliminate collisions, and the range must be tuned relative to round-trip time and the heartbeat interval. Interviewers are testing whether you defend ideas with reasoning rather than ego, and whether you can hold a claim *and* its boundaries at once. Listen-fors: composure under push-back, evidence over assertion, and intellectual honesty (conceding a fair point fast). The anti-pattern is getting defensive or doubling down; the win is treating the challenge as a collaborative stress-test of your own understanding."
+  },
+  {
+    "slug": "iq-jh-explain-tradeoff-simply",
+    "kind": "behavioral",
+    "difficulty": "medium",
+    "prompt": "Pick the single hardest concept from your write-up and teach it to me in two minutes, with one example.",
+    "companies": "Behavioral / all big-tech (explaining a hard concept simply)",
+    "source_name": "MIT CAPD — Using the STAR method (interview communication)",
+    "source_url": "https://capd.mit.edu/resources/the-star-method-for-behavioral-interviews/",
+    "model_answer": "Choose something you genuinely internalized — say, why an entry from a previous term can't be committed by replica-count alone. Lead with the *insight*, then the example: 'A leader could see an old entry on a majority and wrongly think it's safe; Raft only counts an entry committed once an entry from the *current* term is replicated.' Use one concrete two-node-then-three scenario rather than abstractions. The skill being tested is compression: discarding everything non-essential and keeping the load-bearing idea, anchored by an example the listener can hold in their head. Interviewers listen for: a single clear takeaway, an example that does real work, and time discipline (you stopped at the point, not the appendix). Avoid the temptation to show everything you know — depth is proven by what you *leave out*. Finish by checking they followed, the way good documentation invites a question."
+  },
+  {
+    "slug": "iq-jh-why-write-blog",
+    "kind": "behavioral",
+    "difficulty": "easy",
+    "prompt": "Why did you write a blog post about a side project? What did you actually get out of it?",
+    "companies": "Behavioral / all big-tech (motivation & self-awareness)",
+    "source_name": "Tech Interview Handbook — Behavioral interviews",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview/",
+    "model_answer": "Give a genuine, specific motivation rather than 'for my resume.' The honest answer is strong: writing forced you to *find the gaps* — you can't explain the commitment rule clearly until you actually understand it, so the post is where your fuzzy spots surfaced and got fixed. Mention the secondary payoffs: it's a portfolio piece that gets read while you sleep, and it gave you a rehearsed script for exactly this kind of interview question. Interviewers use 'why did you do X' to gauge curiosity, communication values, and whether you reflect on your own growth. Listen-fors: intrinsic motivation (learning, teaching) over pure signaling, and self-awareness about what the exercise taught you. Tie it back to the job: explaining hard ideas clearly is half of senior engineering — design docs, code reviews, onboarding teammates. Keep it concise and sincere; this is a warm-up question, not a place to over-rehearse."
+  }
+]

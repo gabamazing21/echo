@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-ctx-deadline-vs-timeout",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "WithTimeout vs WithDeadline — what's the difference and when do you use each? Why always defer cancel()?",
+    "companies": "Go / backend interviews",
+    "source_name": "Go context docs",
+    "source_url": "https://pkg.go.dev/context",
+    "model_answer": "`WithTimeout(ctx, d)` is relative ('d from now'); `WithDeadline(ctx, t)` is an absolute wall-clock time. Use WithDeadline when a budget is shared across calls (e.g. 'whole request must finish by T' — pass the same deadline down so each hop respects the remaining time); WithTimeout for a fresh per-call budget. Always `defer cancel()` even on timeout contexts: it releases the timer/resources immediately when you finish early; skipping it leaks the timer until expiry (vet warns)."
+  },
+  {
+    "slug": "iq-ctx-fanout-cancel",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Call 5 services in parallel; if any one errors, cancel the rest and return that error. What's the idiomatic tool?",
+    "companies": "Backend / distributed interviews",
+    "source_name": "golang.org/x/sync/errgroup",
+    "source_url": "https://pkg.go.dev/golang.org/x/sync/errgroup",
+    "model_answer": "Use `errgroup.WithContext`: it gives a derived ctx that's cancelled as soon as any `g.Go` func returns a non-nil error, and `g.Wait()` returns the first error.\n\n```go\ng, ctx := errgroup.WithContext(parent)\nfor _, s := range svcs { s := s; g.Go(func() error { return s.Call(ctx) }) }\nerr := g.Wait() // first error cancels ctx -> others stop\n```\n\nWithout errgroup you'd wire a cancellable ctx + a buffered error channel + WaitGroup manually. errgroup is the expected, leak-free answer."
+  },
+  {
+    "slug": "iq-ctx-withvalue-abuse",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "What is context.WithValue appropriate for, and what's the anti-pattern interviewers look for?",
+    "companies": "Go / backend interviews",
+    "source_name": "Go blog — Context",
+    "source_url": "https://go.dev/blog/context",
+    "model_answer": "Appropriate: request-scoped *metadata* that crosses API boundaries — request ID, trace span, authenticated user ID. Anti-pattern: passing normal function parameters or optional config through the context (it makes data flow invisible, untyped, and unchecked by the compiler). Also: use an unexported custom key type (not a bare string) to avoid collisions, and never store a context in a struct field — pass it as the first arg. 'ctx carries signals + metadata, not your function's real inputs.'"
+  }
+]

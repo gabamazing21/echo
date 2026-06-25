@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-vars-zero-values",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "What are Go's zero values, and give an example where relying on them removes a bug or boilerplate.",
+    "companies": "Common Go screening",
+    "source_name": "Effective Go",
+    "source_url": "https://go.dev/doc/effective_go#zero_value",
+    "model_answer": "Every declared variable has a usable **zero value** without explicit initialization: `0` for numbers, `\"\"` for strings, `false` for bools, `nil` for pointers/slices/maps/channels/interfaces.\n\nExample: a `sync.Mutex`'s zero value is a ready-to-use unlocked mutex — `var mu sync.Mutex` just works, no constructor. Same for `bytes.Buffer`. This 'zero value is useful' design removes a whole class of 'forgot to initialize' bugs.\n\nGotcha to mention: a nil slice is fine to `append` to, but writing to a nil **map** panics — maps must be `make`d first."
+  },
+  {
+    "slug": "iq-vars-fizzbuzz",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Implement FizzBuzz: for 1..n, print 'Fizz' for multiples of 3, 'Buzz' for 5, 'FizzBuzz' for both, else the number.",
+    "companies": "Amazon, Microsoft (screening)",
+    "source_name": "LeetCode #412",
+    "source_url": "https://leetcode.com/problems/fizz-buzz/",
+    "model_answer": "Classic warm-up that screens for clean control flow. Build each entry by concatenating: if `i%3==0` add 'Fizz', if `i%5==0` add 'Buzz'; if the string is still empty use the number.\n\nWhy that beats nested if/else: it scales to extra divisors without branching explosion. Watch the order of checks if you instead use if/else-if (test `%15` first)."
+  },
+  {
+    "slug": "iq-vars-short-decl-scope",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "When does `:=` cause a subtle bug via variable shadowing? Show a case.",
+    "companies": "Common Go interviews",
+    "source_name": "Go FAQ / vet",
+    "source_url": "https://go.dev/doc/effective_go#variables",
+    "model_answer": "`:=` declares a *new* variable in the current scope. Inside an `if`/`for` block, `:=` can **shadow** an outer variable so your assignment never reaches the outer one:\n\n```go\nerr := doA()\nif cond {\n    x, err := doB() // NEW err shadows the outer err\n    _ = x\n}\n// outer err is still from doA(), not doB()\n```\n\nThe fix: declare `x` separately and use `=` for `err`, or restructure. `go vet`'s shadow checks and linters catch this. It bites most often with `err` in nested blocks."
+  }
+]

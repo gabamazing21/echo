@@ -1,0 +1,57 @@
+[
+  {
+    "slug": "iq-p99-not-average",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "Why do production teams set SLOs on p99 latency rather than mean latency? Give a concrete case where the average looks healthy but users are suffering.",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "Google SRE Book — Service Level Objectives",
+    "source_url": "https://sre.google/sre-book/service-level-objectives/",
+    "model_answer": "Averages hide the tail. A mean blends 1000 fast requests with a handful of slow ones, so a long tail of very slow responses barely moves it. The SRE book's example: typical request ~50 ms, but 5% of requests are **20x slower** (~1 s) — the mean might read ~95 ms and look fine, while 1-in-20 users wait a second.\n\nPercentiles preserve the **shape** of the distribution: p50 is the typical case, p99/p99.9 is a *plausible worst case*. You care about the tail because:\n\n- It's a real user, every time — not a statistical abstraction.\n- The higher the variance, the more the *typical* experience is dragged by the tail.\n- Capacity, retries, and timeouts must be sized for the tail, not the mean.\n\nRule of thumb: alert and design on p99 (and p99.9 for critical paths); use the mean only for capacity arithmetic.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-p99-tail-amplification-fanout",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "A request fans out to 100 backend shards and must wait for all of them before responding. Each shard answers in under 10 ms 99% of the time. Roughly what fraction of parent requests are slow, and what does this say about per-shard latency targets?",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "Google SRE Book — Service Level Objectives",
+    "source_url": "https://sre.google/sre-book/service-level-objectives/",
+    "model_answer": "This is **tail-latency amplification**. If each of 100 shards is slow with probability 1% (its p99), the chance *all 100* are fast is `0.99^100 ≈ 0.366`. So about **63%** of parent requests hit at least one slow shard — the parent's median is now governed by the shards' p99, not their p50.\n\nMath: `P(parent slow) = 1 − (1 − p)^n`. With p=0.01, n=100 → ~63%. Even a per-shard **p99.9** (0.1% slow) leaves `1 − 0.999^100 ≈ 10%` of parent requests slow.\n\nImplications for design:\n- A fan-out service's p99 depends on each leaf's p99.9 / p99.99, not its p50.\n- Mitigations: **hedged requests** (send a duplicate after a short delay), tied requests, smaller fan-out, or returning partial results.\n- Always test leaf latency at extreme percentiles; an \"average is fine\" leaf will still wreck a wide fan-out.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-lsm-vs-btree-write-amplification",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Define write amplification and read amplification. Explain why a B-tree and an LSM-tree each suffer one more than the other, and where compaction fits in.",
+    "companies": "Backend / DB interviews",
+    "source_name": "DDIA Ch.3 — Storage and Retrieval",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "**Write amplification** = bytes physically written to disk ÷ bytes of logical data written. **Read amplification** = number of disk lookups per logical read.\n\n**B-tree:** updates in place. To survive crashes it writes each change *twice* — once to the **write-ahead log (WAL/redo log)**, once to the page itself — and a small update may rewrite a whole 4–16 KB page. Reads are cheap: one tree path, so low read amplification.\n\n**LSM-tree:** writes go to an in-memory memtable, then flush to immutable SSTables; sequential and cheap up front. But **compaction** repeatedly rewrites the same keys as it merges SSTables across levels, so cumulative write amplification can be **10x or more** (leveled compaction). Reads may probe several SSTables plus their bloom filters → higher read amplification.\n\nSummary:\n- B-tree: lower *write* amplification per op but double-write + page granularity; low read amplification.\n- LSM: low up-front write cost but high cumulative write amplification from compaction; higher read amplification.\nCompaction is the price LSM pays to reclaim space and bound reads.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-lsm-compaction-tradeoff",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "You're choosing a storage engine for a write-heavy time-series ingestion service. Argue for an LSM-tree, then name the operational costs compaction introduces and how you'd manage them.",
+    "companies": "Backend / DB interviews",
+    "source_name": "DDIA Ch.3 — Storage and Retrieval",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "For write-heavy, append-mostly workloads (time series, logs, event ingest) an **LSM-tree** (RocksDB, Cassandra, LevelDB) wins: writes are buffered in a memtable and flushed as **sequential** SSTable writes, which disks and SSDs handle far faster than the random in-place page updates a B-tree does. High insert throughput, good compression on sorted runs.\n\nBut compaction is not free:\n- **Write amplification** — keys get rewritten repeatedly merging levels; can be 10x+, burning SSD endurance and disk bandwidth.\n- **Read amplification** — a read may touch several SSTables; mitigate with **bloom filters** and good key design.\n- **Latency spikes / I/O contention** — background compaction competes with foreground writes, hurting **p99**.\n\nManaging it:\n- Pick a compaction strategy to fit the workload (leveled = read-optimized, lower space amp; size-tiered = write-optimized; time-windowed for time series).\n- Rate-limit/throttle compaction, separate compaction I/O, and provision SSD headroom.\n- Monitor write amplification and p99 — don't let compaction silently eat your tail latency.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-rolling-upgrade-unknown-fields",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "During a rolling upgrade, an old service instance reads a record that a new instance wrote with an extra field, then writes it back. Describe the data-loss bug this can cause and how Protobuf/Avro schema evolution prevents it.",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "DDIA Ch.4 — Encoding and Evolution",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "In a rolling upgrade old and new code run **simultaneously**, so you need backward *and* forward compatibility at once. The bug: new code adds field `priority`; an **old** instance reads the record, doesn't know `priority`, and on re-write **drops the unknown field** — silently destroying data the new version depended on. Forward compatibility means old code must *ignore* unknown fields, but it must also **preserve** them on round-trip.\n\nHow the formats help:\n- **Protocol Buffers:** fields are tagged by number. Unknown fields are retained as *unknown fields* and re-serialized intact, so an old reader/writer round-trips them. New fields must be **optional** with no required defaults; never reuse a tag number.\n- **Avro:** writer's schema is stored/registered; reader resolves against it. New fields need a **default** so old readers can fill them; you only add/remove fields *with defaults*.\n\nRules: add fields as optional with defaults, never remove/repurpose required fields mid-rollout, and verify old code preserves unknowns before deploying.",
+    "challenge_slug": ""
+  }
+]

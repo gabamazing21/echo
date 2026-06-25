@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-sync-deadlock-order",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Goroutine A locks mutex X then Y; goroutine B locks Y then X. What happens, and how do you prevent it? Does -race catch it?",
+    "companies": "Go / systems interviews",
+    "source_name": "Go Memory Model",
+    "source_url": "https://go.dev/ref/mem",
+    "model_answer": "Classic deadlock: A holds X waiting for Y, B holds Y waiting for X — neither proceeds. Prevent it with a **global lock ordering**: always acquire X before Y everywhere (or acquire by address order). `-race` detects data *races*, not deadlocks — a deadlock isn't a race, so it won't flag it (Go's runtime only panics on *total* deadlock when ALL goroutines are blocked). Other fixes: a single coarser lock, `TryLock`, or avoid holding two locks at once."
+  },
+  {
+    "slug": "iq-sync-rwmutex",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "You have a cache with many readers and rare writes. RWMutex or Mutex? How would you actually decide?",
+    "companies": "Go / backend interviews",
+    "source_name": "Go sync docs",
+    "source_url": "https://pkg.go.dev/sync#RWMutex",
+    "model_answer": "RWMutex lets concurrent readers proceed (RLock) and only blocks them for writes — a win when reads dominate AND the critical section is non-trivial. But RWMutex has higher overhead than a plain Mutex and can starve writers; for tiny/fast critical sections a plain Mutex is often *faster* due to lower bookkeeping. Decide by **benchmarking** under realistic read/write mix and contention (`go test -bench` + `-race`), not by intuition. For extreme read-heavy cases consider `sync.Map` or sharded locks."
+  },
+  {
+    "slug": "iq-sync-atomic",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "When is sync/atomic better than a Mutex-guarded counter, and what's the catch?",
+    "companies": "Go / systems interviews",
+    "source_name": "Go sync/atomic docs",
+    "source_url": "https://pkg.go.dev/sync/atomic",
+    "model_answer": "For a single word (counter, flag, pointer swap), `atomic.AddInt64`/`atomic.Value`/`atomic.Bool` are lock-free and faster than a Mutex under contention. Catch: atomics only protect **one** variable's operation — the moment you need two fields consistent with each other, you need a Mutex (atomics can't make a multi-step invariant atomic). Also misuse (mixing atomic and non-atomic access to the same var) is itself a data race. Rule: atomic for one independent counter/flag; mutex for invariants spanning multiple fields."
+  },
+  {
+    "slug": "iq-sync-once",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "How do you initialize an expensive singleton exactly once across many goroutines without a race?",
+    "companies": "Go / backend interviews",
+    "source_name": "Go sync docs",
+    "source_url": "https://pkg.go.dev/sync#Once",
+    "model_answer": "`sync.Once`: `once.Do(func(){ conn = connect() })` runs the function exactly once even if many goroutines call concurrently; the rest block until it finishes, then see the initialized value. Don't hand-roll with a bool flag + check (that's a race, and double-checked locking is subtle in Go). For lazy init that can fail and should retry, `Once` isn't ideal (it won't re-run) — wrap with your own retry or use `OnceValues` (Go 1.21) which returns the cached result."
+  }
+]

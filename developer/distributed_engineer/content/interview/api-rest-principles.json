@@ -1,0 +1,57 @@
+[
+  {
+    "slug": "iq-rest-cursor-vs-offset-pagination",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Your `GET /bookmarks` list grows to millions of rows. Compare offset pagination (`LIMIT 20 OFFSET 10000`) with cursor (keyset) pagination. Which scales, and why does offset drift on a busy table?",
+    "companies": "Stripe, Slack, Shopify",
+    "source_name": "Slack Engineering — Evolving API Pagination at Slack",
+    "source_url": "https://slack.engineering/evolving-api-pagination-at-slack/",
+    "model_answer": "**Offset** asks Postgres to scan and *discard* the first N rows before returning the page, so `OFFSET 10000` re-reads 10k rows every time — cost grows linearly with depth. Worse, if rows are inserted/deleted between page fetches the window **shifts**, so a client paging forward sees duplicates or skips items.\n\n**Cursor (keyset)** pagination uses the last item's sort key as a `WHERE` bound, so each page is an index seek of constant cost and is stable under concurrent writes:\n\n```sql\nSELECT id, url, title\nFROM bookmarks\nWHERE (created_at, id) < ($1, $2)   -- the cursor from the previous page\nORDER BY created_at DESC, id DESC\nLIMIT 20;\n```\n\nReturn an opaque `next_cursor` (base64 of the tie-broken key) so clients can't construct invalid cursors. Always include a unique tiebreaker (`id`) in the sort so the order is total. Offset is fine for small/shallow lists or random page jumps; cursor wins for deep, append-heavy feeds.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-rest-etag-conditional-requests",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Explain how `ETag` + `If-None-Match` and `If-Match` work. How do they save bandwidth on GET, and how do they prevent the lost-update problem on PUT?",
+    "companies": "Cloudflare, Fastly, Backend / API interviews",
+    "source_name": "MDN — ETag (HTTP header)",
+    "source_url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/ETag",
+    "model_answer": "An **ETag** is an opaque validator (often a hash or version) the server attaches to a response. The client caches it and sends it back on the next request.\n\n**Caching (GET):** the client sends `If-None-Match: \"v3\"`. If the resource is unchanged the server returns **304 Not Modified** with an empty body — the client reuses its cached copy, saving bandwidth. If it changed, you get **200** + the new body and a new ETag.\n\n**Optimistic concurrency (PUT/PATCH):** the client sends `If-Match: \"v3\"`. The server only applies the write if the *current* ETag still matches; if someone else updated it first, the ETag is now `\"v4\"`, the precondition fails, and the server returns **412 Precondition Failed**. This stops two clients from silently overwriting each other (the lost-update problem) without holding a lock — the version check is the conflict gate. Weak ETags (`W/\"...\"`) signal semantic, not byte-exact, equivalence.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-rest-api-versioning-strategy",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "You must add a breaking change to a public REST API thousands of clients depend on. Walk through your versioning options (URL path, header, media type) and how you'd roll it out without breaking existing callers.",
+    "companies": "Stripe, Amazon, Microsoft",
+    "source_name": "Microsoft REST API Guidelines — Versioning",
+    "source_url": "https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#12-versioning",
+    "model_answer": "First, prefer **non-breaking** evolution: adding optional fields/endpoints is backward compatible, so version only when you must *remove* or *change the meaning* of something.\n\nThree common schemes:\n- **URL path** (`/v1/bookmarks`) — most visible, trivial to route and cache, easy to demo. The pragmatic default.\n- **Header** (`Accept-Version: 2`) or **media type** (`Accept: application/vnd.app.v2+json`) — keeps URLs stable and is more 'RESTful', but harder to test from a browser/curl and to cache.\n- **Date-based** (Stripe's `Stripe-Version: 2024-06-20`) — pins each account to the version it integrated against.\n\nRollout: ship v2 alongside v1, **never** mutate v1's contract, announce a deprecation window with `Deprecation`/`Sunset` headers, log usage per version to know when v1 is safe to retire. The principle: existing clients must keep working until they choose to migrate.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-rest-cache-control-headers",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Distinguish `Cache-Control: no-store`, `no-cache`, `private`, `public`, and `max-age`. Which would you set on a logged-in user's `/api/me` response, and which on an immutable static asset?",
+    "companies": "Cloudflare, Fastly, Backend / API interviews",
+    "source_name": "MDN — Cache-Control",
+    "source_url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control",
+    "model_answer": "These control *who* may cache and *for how long*:\n- **`no-store`** — never write to any cache. For truly sensitive responses.\n- **`no-cache`** — may store, but must **revalidate** with the origin (via ETag) before reuse. Not the same as no-store.\n- **`private`** — only the end-user's browser may cache; shared caches (CDN/proxy) must not. Use for per-user data.\n- **`public`** — any cache, including shared CDNs, may store it.\n- **`max-age=N`** — fresh for N seconds before revalidation.\n\nFor `/api/me` (logged-in, user-specific): `Cache-Control: private, no-cache` (or `no-store` if highly sensitive) — never let a CDN serve one user's profile to another.\n\nFor a hashed static asset (`app.4f3a.js`, content never changes under that name): `Cache-Control: public, max-age=31536000, immutable` — cache aggressively forever; a new deploy ships a new filename. The classic mistake is a shared cache leaking private data because `public` was set on a user response.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-rest-409-conflict-vs-422",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "A client POSTs to create a bookmark with a URL that already exists for them. Should you return 400, 409, or 422? Defend your choice and explain how 422 differs from 400.",
+    "companies": "Backend / API interviews",
+    "source_name": "MDN — 409 Conflict",
+    "source_url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/409",
+    "model_answer": "Return **409 Conflict**: the request was well-formed and semantically valid, but it conflicts with the *current state* of the resource (a uniqueness constraint). 409 specifically signals 'your request collides with what already exists' — and is often retryable once the client resolves the conflict.\n\nContrast:\n- **400 Bad Request** — the server couldn't even parse/understand the request (malformed JSON, wrong types). It's a syntax-level rejection.\n- **422 Unprocessable Content** — the syntax is fine but the *semantics* fail validation (e.g. `url` is present but not a valid URL, or a required field is missing). The server understood you, but the values are unacceptable.\n\nSo: garbage JSON -> 400; valid JSON whose fields fail your rules -> 422; valid request that duplicates an existing unique resource -> 409. In Go you detect the DB unique-violation (`23505`) and map it: `return echo.NewHTTPError(http.StatusConflict, \"bookmark already exists\")`. Returning 400 for a duplicate is a common but imprecise habit.",
+    "challenge_slug": ""
+  }
+]

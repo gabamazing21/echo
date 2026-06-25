@@ -1,0 +1,38 @@
+# Fly.io config for Consensus.  Edit `app` and `primary_region` to taste, then:
+#   fly launch --no-deploy        # or `fly apps create consensus`
+#   fly postgres create           # then: fly postgres attach <pg-app>  (sets DATABASE_URL)
+#   fly secrets set APP_USER=you APP_PASSWORD='a-strong-password'
+#   fly secrets set ANTHROPIC_API_KEY=sk-ant-...   # optional, enables Claude review
+#   fly deploy
+app = "consensus"
+primary_region = "iad"   # pick the region closest to you: fly platform regions
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  APP_ENV = "prod"
+  # DATABASE_URL, APP_USER, APP_PASSWORD, ANTHROPIC_API_KEY come from `fly secrets`.
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0   # scale to zero when idle (cheap for a personal app)
+
+  [http_service.http_options.response.headers]
+    # nothing fancy; the app sets its own content types.
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+
+# go test (the in-app checker) compiles a test binary on demand, which is
+# memory-hungry; give the VM 1 GB so checker runs don't OOM.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

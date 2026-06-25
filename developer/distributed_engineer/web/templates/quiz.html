@@ -1,0 +1,49 @@
+{{define "content"}}
+<div class="eyebrow">Prove it</div>
+<h1 class="page">Quizzes</h1>
+<p class="lead">Theory questions grade themselves. Code challenges open in the Go Playground — implement them, pass the checker, then mark them done. Pick a step.</p>
+
+<div class="qsel">
+  {{range .Steps}}
+  <a class="qnum {{if eq .ID $.Step}}on{{end}}" href="/quiz/{{.ID}}">{{.ID}}</a>
+  {{end}}
+</div>
+
+<p class="qscore">Step {{.Step}} theory: <b>{{.TheoryGot}}/{{.TheoryTotal}}</b> correct · {{.CodeCount}} code challenge{{if ne .CodeCount 1}}s{{end}}</p>
+
+<div id="qbody">
+{{range .Quizzes}}
+  {{if eq .Kind "Theory"}}
+  <div class="panel q" data-quiz="{{.ID}}" data-answer="{{.Answer}}">
+    <div class="qhead"><span class="tag t-Quiz">Theory</span></div>
+    <p class="qtext">{{.Question}}</p>
+    {{$q := .}}
+    {{range parseOpts .Options}}
+    <label class="opt {{if $q.Progress.Answered}}{{if eq .Letter $q.Answer}}correct{{else if eq .Letter $q.Progress.AnswerGiven}}wrong{{end}}{{end}}">
+      <input type="radio" name="q{{$q.ID}}" value="{{.Letter}}" {{if eq $q.Progress.AnswerGiven .Letter}}checked{{end}} {{if $q.Progress.Answered}}disabled{{end}}>
+      <span>{{.Full}}</span>
+    </label>
+    {{end}}
+    {{if .Progress.Answered}}
+      <div class="expl">
+        <b>{{if .Progress.Correct}}Correct ✓{{else}}Answer: {{.Answer}}{{end}}</b> — {{.Explanation}}
+      </div>
+    {{else}}
+      <button class="qbtn" data-grade="{{.ID}}">Check answer</button>
+    {{end}}
+  </div>
+  {{else}}
+  <div class="panel q" data-quiz="{{.ID}}">
+    <div class="qhead"><span class="tag t-Code">Code challenge</span></div>
+    <p class="qtext">{{.Question}}</p>
+    <div class="code-actions">
+      <a class="qbtn" href="https://go.dev/play/" target="_blank" rel="noopener">Open Go Playground ↗</a>
+      <button class="qbtn ghost" data-reveal="{{.ID}}">{{if .Progress.Revealed}}Hide approach{{else}}Reveal approach{{end}}</button>
+    </div>
+    {{if .Progress.Revealed}}<div class="expl"><b>Approach.</b> {{.Explanation}}</div>{{end}}
+    <label class="selfgrade"><input type="checkbox" data-self="{{.ID}}" {{if .Progress.SelfDone}}checked{{end}}> I implemented this and my checker passes</label>
+  </div>
+  {{end}}
+{{end}}
+</div>
+{{end}}

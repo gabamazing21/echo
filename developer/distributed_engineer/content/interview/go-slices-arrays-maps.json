@@ -1,0 +1,43 @@
+[
+  {
+    "slug": "iq-slices-two-sum",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Two Sum: given an int slice and a target, return indices of the two numbers that add to target.",
+    "companies": "Amazon, Google, Apple, Microsoft, Adobe",
+    "source_name": "NeetCode 150 / LeetCode #1",
+    "source_url": "https://leetcode.com/problems/two-sum/",
+    "model_answer": "Brute force is O(n²). The interview-expected answer is **one pass with a hash map**: for each `x`, check if `target-x` is already in the map; if so return the stored index and the current index; otherwise store `x -> i`. O(n) time, O(n) space.\n\nThis is *the* canonical 'use a map to trade space for time' problem (lesson 2.1's lesson made concrete). Mention the complement trick explicitly — that's what they're listening for.",
+    "challenge_slug": "two-sum"
+  },
+  {
+    "slug": "iq-slices-contains-duplicate",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Contains Duplicate: return true if any value appears at least twice in the slice.",
+    "companies": "Amazon, Apple, Google",
+    "source_name": "NeetCode 150 / LeetCode #217",
+    "source_url": "https://leetcode.com/problems/contains-duplicate/",
+    "model_answer": "Use a set: `seen := map[int]struct{}{}`; for each value, if it's already in `seen` return true, else add it. O(n) time, O(n) space. Idiomatic-Go signal: use `map[T]struct{}` (zero-byte values) as a set, not `map[T]bool`.\n\nAlternative if no extra space allowed: sort first (O(n log n)) and check adjacent equality."
+  },
+  {
+    "slug": "iq-slices-group-anagrams",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Group Anagrams: given strings, group those that are anagrams of each other.",
+    "companies": "Amazon, Meta, Uber",
+    "source_name": "NeetCode 150 / LeetCode #49",
+    "source_url": "https://leetcode.com/problems/group-anagrams/",
+    "model_answer": "Key each word by a canonical form, then group with a map `map[string][]string`. Two canonicalization choices:\n1. **Sort the letters** → key is the sorted string. O(n·k log k).\n2. **Char-count signature** (count of each letter as the key) → O(n·k), better for long words.\n\nThis tests the 'hash by a derived key' pattern — exactly the frequency-map idea from the hash-maps lesson."
+  },
+  {
+    "slug": "iq-slices-backing-array",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Explain the shared-backing-array gotcha. Show code where appending to one slice corrupts another.",
+    "companies": "Common Go interviews",
+    "source_name": "Go Blog — Slices",
+    "source_url": "https://go.dev/blog/slices-intro",
+    "model_answer": "A slice is a *view* (pointer, len, cap) into a backing array. Two slices can share the same array, so a write or `append` through one can be visible through the other:\n\n```go\na := []int{1, 2, 3, 4}\nb := a[:2]            // shares a's array, cap 4\nb = append(b, 99)    // writes index 2 of the SAME array\nfmt.Println(a)       // [1 2 99 4] — a was mutated!\n```\n\n`append` only allocates a new array when capacity is exceeded — until then it mutates in place. Fixes: copy (`append([]int{}, src...)`), or use the **three-index slice** `a[:2:2]` to cap capacity so the next append must reallocate. This is one of the most common real Go bugs and a frequent interview probe."
+  }
+]

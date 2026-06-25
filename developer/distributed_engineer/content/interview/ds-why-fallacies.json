@@ -1,0 +1,57 @@
+[
+  {
+    "slug": "iq-backoff-jitter",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Many clients retry a failing service using exponential backoff. Operators notice load arrives in sharp synchronized spikes that keep re-overloading the server. What is going wrong, and how do you fix the retry schedule?",
+    "companies": "SRE interviews / infra interviews",
+    "source_name": "AWS Architecture Blog — Exponential Backoff and Jitter",
+    "source_url": "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/",
+    "model_answer": "Plain exponential backoff fixes *how long* clients wait but not *when they wake up*. Clients that failed together compute the same `base * 2^attempt` interval and retry at the same instant, producing synchronized waves — a retry storm that re-saturates the server each round. The fix is **jitter**: randomize the wait so retries spread out.\n\n- **Full jitter:** `sleep = random(0, base * 2^attempt)`. Simulations show this cuts total contending work by >50% versus no jitter and clears the work fastest.\n- **Equal jitter:** `temp = base * 2^attempt; sleep = temp/2 + random(0, temp/2)` — keeps a minimum wait.\n- **Decorrelated jitter:** `sleep = min(cap, random(base, prev*3))`.\n\nAlways cap the backoff and bound the number of retries. The goal isn't just to back off, but to *decorrelate* clients so the herd stops arriving in lockstep.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-timeout-retry-idempotency",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "A client sends a 'charge card' RPC, the call times out, and the client retries. Why is this dangerous, and what property must the operation have to make retrying safe?",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "Google SRE Book — Addressing Cascading Failures",
+    "source_url": "https://sre.google/sre-book/addressing-cascading-failures/",
+    "model_answer": "A timeout tells you the client gave up waiting — **not** that the work didn't happen. The request may have been fully processed, with only the *response* lost or delayed. So a blind retry can charge the card twice. This is partial failure under uncertainty: success, failure, and 'slow' are indistinguishable from the caller's side.\n\nThe safe-retry property is **idempotency**: applying the operation N times has the same effect as once. You get it by attaching a client-generated **idempotency key** (or request ID); the server deduplicates so a replayed request is a no-op that returns the original result.\n\nTwo more guards from SRE practice: bound retries (uncontrolled retries amplify load — three layers each retrying thrice means 4^3 = 64 attempts at the bottom), and **propagate deadlines** so servers don't waste work on requests the client already abandoned.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-golden-signals-tracing",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "A request flows through five microservices and is intermittently slow. Metrics on each service look 'fine' individually. What observability approach lets you find which hop is responsible, and what core signals should you be watching?",
+    "companies": "SRE interviews / infra interviews",
+    "source_name": "Google SRE Book — Monitoring Distributed Systems",
+    "source_url": "https://sre.google/sre-book/monitoring-distributed-systems/",
+    "model_answer": "Per-service averages hide tail latency and can't attribute a slow request to one hop. You need two things.\n\n**The four golden signals**, watched as distributions (p50/p95/p99), not averages:\n- **Latency** — and separate successful from failed requests, since errors can be fast.\n- **Traffic** — demand (e.g. requests/sec).\n- **Errors** — explicit and implicit failures.\n- **Saturation** — how full the most constrained resource is.\n\n**Distributed tracing** ties it together: propagate a trace/span ID across every hop so one request's path is reconstructable end to end. The trace's span breakdown shows *which* service ate the time — the thing per-service dashboards can't.\n\nCombine **white-box** monitoring (internal metrics/logs, for the 'why') with **black-box** probes (external user-visible behavior, for the 'what's broken'). As SRE puts it, in layered systems one person's symptom is another's cause — tracing is what lets you walk that chain.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-happened-before-logical-clocks",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Two nodes each write to a shared key and stamp their write with their local wall-clock time. You merge the writes and keep the one with the larger timestamp. Why is this unreliable, and what mechanism orders events correctly without synchronized clocks?",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "Martin Kleppmann — How to do distributed locking",
+    "source_url": "https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html",
+    "model_answer": "Wall clocks (`gettimeofday`) drift and can jump forward or backward (NTP steps, leap seconds, VM pauses). So a 'later' write can carry a *smaller* timestamp than an 'earlier' one — last-write-wins by wall-clock can silently drop the newer update. You cannot derive a correct global order from independent physical clocks.\n\nUse **logical ordering** instead, based on Lamport's **happened-before** relation: order events by causality, not time. A **Lamport clock** is a per-node counter incremented on each event and piggybacked on messages; the receiver sets its counter to `max(local, received) + 1`. This guarantees if A causally precedes B, then `clock(A) < clock(B)`.\n\nWhen you need a single authoritative sequence, have one service hand out **strictly monotonically increasing tokens** (fencing tokens) — Kleppmann's point is exactly this: don't trust timing; trust a monotonic counter. **Vector clocks** go further, detecting concurrent (conflicting) writes rather than masking them.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-observability-not-optional",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "The original eight fallacies didn't mention monitoring, yet modern lists add 'observability is optional' as a fallacy. In a system built on partial failure and unreliable networks, why is treating observability as optional a fallacy?",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "Wikipedia — Fallacies of distributed computing",
+    "source_url": "https://en.wikipedia.org/wiki/Fallacies_of_distributed_computing",
+    "model_answer": "The original eight fallacies (Deutsch, 1994; Gosling added the eighth ~1997) predate microservices. Richards and Ford later added three modern fallacies, including **'observability is optional.'**\n\nIt's a fallacy because the foundational problem of distributed systems is **partial failure under uncertainty**: a call can succeed, fail, or hang, and a timeout tells you nothing definite. On a single machine you can attach a debugger and read one stack; across many nodes there is no single source of truth and no global 'now.' The only way to know what actually happened is to *instrument it* — structured logs, metrics (the four golden signals), and distributed traces correlated by request ID.\n\nWithout that, you can't tell a slow dependency from a dead one, can't locate which hop failed, and can't safely retry. Observability isn't a nice-to-have bolted on later; in a system designed around unreliable networks, it's how you recover the visibility that distribution took away.",
+    "challenge_slug": ""
+  }
+]

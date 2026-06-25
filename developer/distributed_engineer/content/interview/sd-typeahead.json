@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-ta-design",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Design search autocomplete (typeahead): suggest top completions as the user types, at scale, within tens of ms.",
+    "companies": "Google, Amazon",
+    "source_name": "ByteByteGo — Search Autocomplete",
+    "source_url": "https://bytebytego.com/courses/system-design-interview/design-a-search-autocomplete-system",
+    "model_answer": "Serve from an in-memory **trie** of popular queries where each node stores its **precomputed top-K** completions, so a lookup is one traversal + return the cached list (no query-time ranking). Build/refresh the trie **offline** from query logs (aggregate frequencies via a pipeline, recompute top-K, atomically swap into read replicas). Client debounces keystrokes and caps results; hot prefixes cached at the edge. Shard the trie by prefix. Reads never hit disk. The headline: precompute top-K + serve from memory + offline rebuild."
+  },
+  {
+    "slug": "iq-ta-topk-node",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Why store a precomputed top-K at each trie node instead of computing suggestions at query time?",
+    "companies": "Google, search interviews",
+    "source_name": "System Design Primer",
+    "source_url": "https://github.com/donnemartin/system-design-primer",
+    "model_answer": "At query time, computing suggestions would mean gathering *all* completions under the prefix and ranking them — too slow for a per-keystroke latency budget. Caching the top-K at each node turns the query into O(prefix length) traversal + return. The cost is moved offline to the rebuild pipeline (which recomputes the cached lists from updated frequencies). This is the same 'precompute the expensive part, serve cheap' pattern as the news feed and Top-K (Step 2)."
+  },
+  {
+    "slug": "iq-ta-freshness",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "How do new trending queries make it into suggestions, and what does the rebuild cadence trade off?",
+    "companies": "Search / data interviews",
+    "source_name": "ByteByteGo — Search Autocomplete",
+    "source_url": "https://bytebytego.com/courses/system-design-interview/design-a-search-autocomplete-system",
+    "model_answer": "A streaming/batch pipeline aggregates query frequencies over a window and periodically rebuilds (or incrementally updates) the trie's node top-K, then ships it to read replicas. Cadence trades **freshness** (how fast a newly trending term appears) against **compute cost** (rebuilds are heavy). Real systems blend a slow full rebuild with a fast incremental layer for breaking trends. Don't update the trie synchronously per search — that would couple the hot read path to writes."
+  }
+]

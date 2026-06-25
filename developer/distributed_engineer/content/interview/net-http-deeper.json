@@ -1,0 +1,57 @@
+[
+  {
+    "slug": "iq-http-idempotency-key-design",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Design a retry-safe POST: a client charges a card via POST /payments, the response is lost to a timeout, and the client retries. How do you guarantee exactly one charge?",
+    "companies": "Stripe, Amazon",
+    "source_name": "Stripe — Designing robust and predictable APIs with idempotency",
+    "source_url": "https://stripe.com/blog/idempotency",
+    "model_answer": "Use an **idempotency key**: the *client* generates a unique key (a v4 UUID) per logical operation and sends it as a header, reusing the **same** key on every retry of that operation.\n\nServer side:\n1. On request, look up the key (scoped to `(account, endpoint)`) in a store.\n2. **First time** — insert the key in one transaction with the charge; persist the response (status + body). Use a unique constraint so two concurrent retries can't both insert.\n3. **Seen before, completed** — return the *stored* response without re-charging.\n4. **Seen, in-flight** — return 409/425 or block until the first finishes (a lock row).\n\n```\nPOST /payments\nIdempotency-Key: 3f9c...e1\n```\n\nDetails that score points: store the response so retries are *identical*; compare request params to reject key reuse with different bodies; set a TTL (e.g. 24h); the dedup record and the side effect must be **atomic** (same DB transaction). This converts a non-idempotent POST into a safe-to-retry one.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-http-safe-vs-idempotent",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Distinguish 'safe' from 'idempotent'. Is PUT idempotent? Is POST? Is DELETE? Give the reasoning for each.",
+    "companies": "Common backend interviews",
+    "source_name": "MDN — Idempotent / Safe (HTTP)",
+    "source_url": "https://developer.mozilla.org/en-US/docs/Glossary/Idempotent",
+    "model_answer": "**Safe** = the request doesn't change server state (read-only). **Idempotent** = doing it N times leaves the same *end state* as doing it once (it may still do work each time). Safe implies idempotent, but not vice-versa.\n\n- **GET** — safe and idempotent (pure read).\n- **PUT** — *not* safe but **idempotent**: \"set resource to this value\"; repeating lands the same value.\n- **DELETE** — *not* safe but **idempotent**: deleting an already-gone resource is a no-op; end state (gone) is identical. (The *status* may differ — 204 then 404 — but state doesn't.)\n- **POST** — neither: \"create a new one\" twice creates two.\n- **PATCH** — usually not idempotent (e.g. `increment by 1`), though it can be.\n\nWhy it matters: idempotent + a transient 5xx = **safe to retry**; non-idempotent (POST) needs an idempotency key to be retried safely. That's the practical payoff of the distinction.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-http-status-code-decision-tree",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Build a decision tree for choosing a status code: success vs client error vs server error, and which ones a client should retry.",
+    "companies": "Common backend interviews",
+    "source_name": "MDN — HTTP response status codes",
+    "source_url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status",
+    "model_answer": "Decide by family, then specifics:\n\n- **Did it succeed?** → 2xx. Created a resource → **201** (+ `Location`); nothing to return → **204**; otherwise **200**.\n- **Did the client send something wrong?** → 4xx, and **don't retry unchanged**. Malformed → **400**; not authenticated → **401**; authenticated but not allowed → **403**; resource missing → **404**; method wrong → **405** (+ `Allow`); conflict/version → **409**; rate-limited → **429** (+ `Retry-After`).\n- **Did the server fail?** → 5xx, often **transient → retry with exponential backoff + jitter**. Generic bug → **500**; bad upstream → **502**; overloaded/down → **503** (+ `Retry-After`); upstream timeout → **504**.\n\nRules of thumb interviewers listen for: **4xx = client's fault, retrying won't help; 5xx = server's fault, retry *idempotent* requests with backoff**; 429 is an explicit \"slow down\"; never return 200 with an error body.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-http-cors-preflight",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "A browser app at app.example.com calls api.example.com and the call is blocked by CORS. Explain the same-origin policy, what a preflight is, and how the server fixes it.",
+    "companies": "Common web/backend interviews",
+    "source_name": "MDN — Cross-Origin Resource Sharing (CORS)",
+    "source_url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS",
+    "model_answer": "The **same-origin policy** stops a page's JS from reading responses from a *different* origin (scheme+host+port). CORS is the **server's opt-in** to relax that, expressed via response headers. Note it's enforced by the **browser**, not the server — the request often reaches the server; the browser just hides the response unless allowed.\n\nFor 'non-simple' requests (custom headers, methods beyond GET/HEAD/POST, JSON content type), the browser first sends a **preflight** `OPTIONS` with `Access-Control-Request-Method`/`-Headers`. The server must answer with:\n\n```\nAccess-Control-Allow-Origin: https://app.example.com\nAccess-Control-Allow-Methods: GET, POST, PUT, DELETE\nAccess-Control-Allow-Headers: Authorization, Content-Type\nAccess-Control-Max-Age: 86400        # cache the preflight\nAccess-Control-Allow-Credentials: true  # if cookies; then Origin must be exact, not *\n```\n\nFix: configure CORS middleware to echo/allow the app's origin and the methods/headers it uses. Pitfall: `*` is forbidden when credentials are sent.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-http-statelessness-horizontal-scaling",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Why does HTTP being stateless make a service easy to scale horizontally? What breaks if you store session state in server memory?",
+    "companies": "Amazon, Google",
+    "source_name": "MDN — HTTP overview (stateless)",
+    "source_url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview",
+    "model_answer": "Stateless = each request is **self-contained**; the server keeps no memory of prior requests. Everything needed (identity, intent) travels *in* the request — a token, cookie, or body. So **any** server behind the load balancer can handle **any** request: add ten boxes and they all serve traffic immediately, with no session affinity, easy failover, and trivial rolling deploys.\n\nIf you instead stash session state in **process memory**, you break this: the next request must hit the *same* box (sticky sessions / session affinity), so the LB can't freely spread load; if that box dies or is redeployed, the session is lost; and you can't scale out cleanly. The fix is to push state **out of the process** — into a token the client carries (stateless JWT) or a shared store (Redis/Postgres) every node can reach. The handler layer stays stateless; state lives somewhere shared and deliberate.",
+    "challenge_slug": ""
+  }
+]

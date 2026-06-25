@@ -1,0 +1,53 @@
+[
+  {
+    "slug": "iq-sort-binary-search",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Implement binary search on a sorted slice, returning the index of target or -1. Name the off-by-one bugs you must avoid.",
+    "companies": "Amazon, Google, Microsoft, Adobe",
+    "source_name": "NeetCode 150 / LeetCode #704",
+    "source_url": "https://leetcode.com/problems/binary-search/",
+    "model_answer": "Keep `lo`, `hi` (inclusive), loop while `lo <= hi`, compute `mid := lo + (hi-lo)/2`, then move past mid (`mid+1`/`mid-1`). **O(log n) time, O(1) space.**\n\nThe four bugs interviewers seed: (1) `mid := (lo+hi)/2` can **overflow** — use `lo + (hi-lo)/2`; (2) `lo < hi` with inclusive `hi` skips the final one-element range; (3) setting `lo = mid` (not `mid+1`) → **infinite loop** on a 2-element range; (4) forgetting the not-found/empty case, handled by the loop simply ending. The precondition is non-negotiable: input must be **sorted**.",
+    "challenge_slug": "binary-search"
+  },
+  {
+    "slug": "iq-sort-rotated-array",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Search in a Rotated Sorted Array: find a target in O(log n) in an ascending array rotated at an unknown pivot.",
+    "companies": "Amazon, Meta, Microsoft, Google, Bloomberg",
+    "source_name": "NeetCode 150 / LeetCode #33",
+    "source_url": "https://leetcode.com/problems/search-in-rotated-sorted-array/",
+    "model_answer": "Modified binary search: at each `mid`, **one half is always sorted**. Detect which (compare `nums[lo]` to `nums[mid]`), check whether the target lies within that sorted half's range, and discard the other half. **O(log n) time, O(1) space.**\n\nThe insight to verbalize: a rotated sorted array is two sorted runs, and at any mid at least one side is fully ordered, so you can still halve every step. The trap is the boundary comparisons (`<=` vs `<`) — hand-trace a 2-element case. With duplicates (LeetCode #81) the worst case degrades to O(n); mention it."
+  },
+  {
+    "slug": "iq-sort-merge-vs-quick",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Compare merge sort and quicksort across worst case, memory, and stability. When would you pick each? What makes quicksort hit O(n²)?",
+    "companies": "Google, Amazon, Microsoft, Meta",
+    "source_name": "MIT 6.006 Introduction to Algorithms",
+    "source_url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/",
+    "model_answer": "**Merge sort**: O(n log n) *worst case* always, **stable**, but O(n) extra memory. **Quicksort**: O(n log n) average but **O(n²) worst case**, **not stable**, sorts in place (O(log n) stack).\n\nQuicksort's bad case comes from a **poor pivot** — e.g. last-element pivot on already-sorted input makes every partition lopsided. Fix: random or median-of-three pivot. Pick **merge sort** when you need stability or a hard worst-case guarantee (or for linked lists / external sort); pick **quicksort** for raw in-memory speed when average case suffices. In practice you call the library's tuned hybrid (`sort.Slice` / pattern-defeating quicksort)."
+  },
+  {
+    "slug": "iq-sort-stability",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "What does it mean for a sort to be stable, and when does stability actually matter? Which of Go's sort.Slice / sort.SliceStable gives it to you?",
+    "companies": "Google, Amazon, Bloomberg",
+    "source_name": "Go sort package documentation",
+    "source_url": "https://pkg.go.dev/sort",
+    "model_answer": "**Stable** = equal keys keep their original relative order. It matters when you sort by one key but care about a prior order on another: records already sorted by name, then stable-sorted by department, stay name-ordered *within* each department. An unstable sort would scramble that secondary order.\n\nIn Go, `sort.Slice` is **not** guaranteed stable (it uses an introsort variant); `sort.SliceStable` is. The gotcha: don't *assume* stability from `sort.Slice` — if you depend on it, you must call the stable variant explicitly. Stability typically costs extra memory or time, which is why it isn't the default."
+  },
+  {
+    "slug": "iq-sort-heap-sort",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "How does heap sort work, and what are its time/space characteristics? Why might you choose it over quicksort or merge sort? How does it relate to Go's container/heap?",
+    "companies": "Google, Amazon, Microsoft",
+    "source_name": "Go container/heap documentation",
+    "source_url": "https://pkg.go.dev/container/heap",
+    "model_answer": "Build a binary heap from the array (O(n)), then repeatedly swap the max to the end and sift down the reduced heap. **O(n log n) worst case, O(1) extra space**, **in place** — but **not stable** and cache-unfriendly (jumps around the array).\n\nReach for it when you want a guaranteed O(n log n) worst case *and* O(1) space (merge sort gives the bound but needs O(n) memory; quicksort gives in-place but risks O(n²)). The same heap powers a **priority queue** — Go exposes it via `container/heap` (implement the interface), which is exactly the tool for streaming top-k and Dijkstra-style problems."
+  }
+]

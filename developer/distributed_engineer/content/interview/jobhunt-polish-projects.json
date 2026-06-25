@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "iq-jh-walk-through-raft",
+    "kind": "behavioral",
+    "difficulty": "medium",
+    "prompt": "\"Walk me through your Raft project.\" Take me from the problem it solves to how it's built — in about three minutes.",
+    "companies": "Behavioral / all big-tech (universal project deep-dive)",
+    "source_name": "Tech Interview Handbook — Behavioral interviews",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview/",
+    "model_answer": "Treat this as a rehearsed story, not a code tour. Open with the **problem** in one sentence (a cluster must agree on one ordered log despite crashes and dropped messages), then the **big idea** (one elected leader funnels all writes). Next, **your design**: the roles, terms as a logical clock, how a write flows leader→followers→commit. Then go *one level deep* on something you actually built — leader election with randomized timeouts, or log replication and the commitment rule — to prove it's yours, not a tutorial. Close with scope honesty: what works, what's partial. Interviewers listen for: a clear mental model, the ability to choose an appropriate altitude (not drowning them in code), and ownership. Have a diagram ready in your head. Avoid reciting the paper; report from the trenches. Let them steer with follow-ups rather than dumping everything at once."
+  },
+  {
+    "slug": "iq-jh-hardest-bug",
+    "kind": "behavioral",
+    "difficulty": "medium",
+    "prompt": "What was the hardest bug you hit in one of your projects, and how did you find it?",
+    "companies": "Behavioral / all big-tech (universal debugging story)",
+    "source_name": "Tech Interview Handbook — Behavioral rubrics",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview-rubrics/",
+    "model_answer": "Structure it as STAR. **Situation/Task:** the symptom — a flaky election test, a log that wouldn't converge, a deadlock from holding a mutex across an RPC. **Action** is the heart: how you *narrowed* it — the test that flapped, the log line that gave it away, the hypothesis you formed, how you confirmed it (added logging, a targeted test, the race detector). **Result:** the fix and what you changed so it can't regress (a test that fails before, passes after). Interviewers love debugging stories because they can't be faked — they reveal how you actually think under uncertainty. Listen-fors: a systematic process rather than random thrashing, comfort with tooling, and a concrete root cause (not \"I added some sleeps and it went away\"). Pick a bug with a real diagnostic arc, and rehearse it until the sequence is smooth."
+  },
+  {
+    "slug": "iq-jh-would-do-differently",
+    "kind": "behavioral",
+    "difficulty": "medium",
+    "prompt": "If you started this project over today, what would you do differently?",
+    "companies": "Behavioral / all big-tech (universal reflection question)",
+    "source_name": "Tech Interview Handbook — Behavioral interviews",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview/",
+    "model_answer": "This probes self-awareness and growth, so a confident, specific critique beats false modesty or 'nothing.' Name one or two real things and explain *why* — maybe your locking was too coarse and you'd model the state machine more carefully, your tests were too slow so you'd lean on table-driven cases earlier, or your RPC layer was over-clever. Crucially, show you learned the principle, not just the fix: 'I'd separate the lock-holding from the network call, because holding a mutex across an RPC is how I got the deadlock.' Interviewers listen for: honest reflection without trashing your own work, judgment about trade-offs, and evidence you'd apply the lesson next time. Avoid two failure modes — claiming it was perfect (no growth) and listing ten flaws (no judgment about what matters). Two sharp, principled improvements is the sweet spot."
+  },
+  {
+    "slug": "iq-jh-honest-incomplete",
+    "kind": "behavioral",
+    "difficulty": "medium",
+    "prompt": "Your Raft README says partition handling is only partial. Walk me through what's done, what isn't, and why you shipped it that way.",
+    "companies": "Behavioral / all big-tech (universal scoping & honesty)",
+    "source_name": "Tech Interview Handbook — Behavioral rubrics",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview-rubrics/",
+    "model_answer": "Honesty here is a strength, not an apology. State crisply what *works* (leader election, log replication, persistence across restarts), then what's *partial* and the boundary precisely ('a follower rejoining after a long partition reconciles, but I haven't implemented snapshotting for log compaction'). Then the *why*: a deliberate scoping decision — you prioritized getting the core consensus path correct and tested over breadth. Interviewers respect a candidate who knows exactly where the edges of their own system are; vague hand-waving ('it mostly works') reads worse than a clear known-limitation. Listen-fors: accurate self-assessment, the ability to reason about what completeness *would* require, and engineering maturity around trade-offs and time budgets. Never oversell — claiming full Raft and then fumbling a partition follow-up is far worse than an honest, well-drawn boundary you can defend in depth."
+  },
+  {
+    "slug": "iq-jh-why-trust-tests",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "Your repos have a green CI badge. Why should I trust that more than you telling me the code works?",
+    "companies": "Backend / all big-tech (portfolio & engineering hygiene)",
+    "source_name": "Tech Interview Handbook — FAANG-ready resume guide",
+    "source_url": "https://www.techinterviewhandbook.org/resume/",
+    "model_answer": "Because CI is *external, reproducible* evidence: the tests ran on a clean machine that isn't yours, on every push, so 'works on my machine' is ruled out. A green badge proves the project builds and passes *right now*, verifiable by anyone in one click — that's the difference between a claim and proof. Go deeper to show you understand the limits: a badge is only as good as the suite behind it, so coverage of the *interesting* logic matters more than a single trivial test, and a flaky badge that's sometimes red is worth less than a smaller reliable one. Mention the race detector (`go test -race`) for concurrency projects. Interviewers listen for: an understanding that demonstrated skill beats claimed skill, awareness that tests must exercise real behavior, and good engineering hygiene. This connects your portfolio polish to how you'd actually keep a production codebase trustworthy."
+  }
+]

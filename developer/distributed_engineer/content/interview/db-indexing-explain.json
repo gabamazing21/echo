@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-idx-composite-design",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "For `SELECT * FROM orders WHERE user_id=$1 AND status='pending' ORDER BY created_at DESC LIMIT 10`, design the index. Justify the column order.",
+    "companies": "Backend / DB interviews",
+    "source_name": "Use The Index, Luke! — Composite indexes",
+    "source_url": "https://use-the-index-luke.com/sql/where-clause/the-equals-operator/concatenated-keys",
+    "model_answer": "Index `(user_id, status, created_at DESC)`. Leftmost-prefix rule: put **equality** columns first (user_id, status), then the **range/sort** column (created_at). That lets the DB seek directly to the user+status rows already ordered by created_at, so the `ORDER BY ... LIMIT 10` is satisfied by the index — no sort, no extra rows scanned. Order matters: an index leading with created_at wouldn't serve the equality filter efficiently. Verify with EXPLAIN — you want an Index Scan returning ~10 rows, not a Sort over thousands."
+  },
+  {
+    "slug": "iq-idx-partial",
+    "kind": "sql",
+    "difficulty": "medium",
+    "prompt": "Every query filters `WHERE deleted_at IS NULL`. Should that be in every index, or is there a better tool?",
+    "companies": "Backend / DB interviews",
+    "source_name": "PostgreSQL — Partial Indexes",
+    "source_url": "https://www.postgresql.org/docs/current/indexes-partial.html",
+    "model_answer": "Use a **partial index**: `CREATE INDEX idx_active ON bookmarks (user_id) WHERE deleted_at IS NULL;`. It indexes only the active rows, so it's smaller (faster, less to maintain) and the planner uses it for queries that include the same predicate. Great for soft-delete and other 'mostly query a subset' cases (e.g. `WHERE status='active'`). Also mention **expression indexes** for the sibling problem: `CREATE INDEX ON users (lower(email))` to make `WHERE lower(email)=...` use an index."
+  },
+  {
+    "slug": "iq-idx-explain-seqscan",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "EXPLAIN ANALYZE shows a Seq Scan on a 10M-row table for a selective query. Walk through diagnosing and fixing it.",
+    "companies": "Backend / infra interviews",
+    "source_name": "PostgreSQL — Using EXPLAIN",
+    "source_url": "https://www.postgresql.org/docs/current/using-explain.html",
+    "model_answer": "A Seq Scan reads every row — fine for small/low-selectivity queries, a red flag for a selective filter on a big table. Steps: (1) confirm selectivity (the filter returns few rows); (2) add the matching index (composite if multi-column); (3) re-run EXPLAIN ANALYZE and confirm it flipped to Index Scan and the time dropped. If it still seq-scans, suspect stale stats (`ANALYZE`), a non-sargable predicate (function on the column, leading wildcard `LIKE '%x'`), or low selectivity where a scan is genuinely cheaper. Read actual vs estimated rows to spot bad estimates."
+  },
+  {
+    "slug": "iq-idx-leetcode-dept-salary",
+    "kind": "sql",
+    "difficulty": "medium",
+    "prompt": "Department Highest Salary: find, for each department, the employee(s) with the highest salary.",
+    "companies": "Amazon, Meta, Bloomberg",
+    "source_name": "LeetCode #184 (Database)",
+    "source_url": "https://leetcode.com/problems/department-highest-salary/",
+    "model_answer": "Two idiomatic approaches: a window function — `RANK() OVER (PARTITION BY departmentId ORDER BY salary DESC)` then keep rank=1 (ties included); or a correlated subquery / join to the per-department max. Window functions are the cleaner, more scalable answer and a frequent interview discriminator. To make it fast at scale you'd index `(departmentId, salary)`. Attempt + see the editorial on LeetCode (it has a SQL judge), and discuss the window-function vs GROUP BY trade-off."
+  }
+]

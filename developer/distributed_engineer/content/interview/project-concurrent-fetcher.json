@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-fetch-bounded",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Fetch 100,000 URLs but never run more than 50 requests at once. Two ways to bound concurrency in Go?",
+    "companies": "Backend / Go interviews",
+    "source_name": "Go blog — Pipelines (bounded)",
+    "source_url": "https://go.dev/blog/pipelines",
+    "model_answer": "(1) **Semaphore channel**: `sem := make(chan struct{}, 50)`; each goroutine does `sem <- struct{}{}` before work and `<-sem` after (buffer size caps in-flight). (2) **Worker pool**: start 50 workers that range over a jobs channel. Both bound memory and the downstream load — launching 100k goroutines at once would exhaust sockets/file descriptors and hammer the target. Prefer the worker pool when you also want clean shutdown and result collection; the semaphore when you want minimal code around an existing loop."
+  },
+  {
+    "slug": "iq-fetch-backoff",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Some fetches return 500/429. Design retries that don't make things worse, and explain jitter.",
+    "companies": "Amazon, AWS, backend interviews",
+    "source_name": "AWS — Exponential Backoff and Jitter",
+    "source_url": "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/",
+    "model_answer": "Retry only idempotent/safe or ret-safe requests, with **exponential backoff** (delay = base·2^attempt, capped) and a max attempt count. Add **jitter** (randomize the delay) so many clients that failed together don't retry in sync and create a thundering-herd that re-overloads the server. Honor `Retry-After` on 429. Add a **circuit breaker**: after repeated failures, stop trying for a cooldown so you don't pummel a downed dependency. This 'backoff + jitter + breaker' trio is the expected answer."
+  },
+  {
+    "slug": "iq-fetch-bounded-queue",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Design a Bounded Blocking Queue: enqueue blocks when full, dequeue blocks when empty, safe for many producers/consumers.",
+    "companies": "Amazon, Google",
+    "source_name": "LeetCode #1188",
+    "source_url": "https://leetcode.com/problems/design-bounded-blocking-queue/",
+    "model_answer": "In Go the idiomatic answer *is a buffered channel* of the capacity — `make(chan int, cap)` gives blocking enqueue when full and blocking dequeue when empty, concurrency-safe, for free. The interview wants you to either (a) recognize that, or (b) build it from a `sync.Mutex` + two `sync.Cond` (notFull, notEmpty) if channels are disallowed. It's the backpressure primitive behind worker pools: a full queue slows producers, which is the feature, not a bug."
+  }
+]

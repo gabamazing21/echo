@@ -1,0 +1,33 @@
+[
+  {
+    "slug": "iq-wc-valid-anagram",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Valid Anagram: given two strings, return true if one is an anagram of the other.",
+    "companies": "Amazon, Meta, Bloomberg",
+    "source_name": "NeetCode 150 / LeetCode #242",
+    "source_url": "https://leetcode.com/problems/valid-anagram/",
+    "model_answer": "Same frequency-map idea as word counting. Count each rune in `s`, decrement for each rune in `t`; they're anagrams iff lengths match and every count ends at zero. O(n) time, O(1) extra for a fixed alphabet (or O(k) with a map for Unicode).\n\nAlternative: sort both and compare — O(n log n), simpler but slower. Unicode caveat: iterate runes, not bytes (`strings.Fields`/`[]rune`), which is the same lesson as the word-count project."
+  },
+  {
+    "slug": "iq-wc-word-frequency",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Implement WordCount(s) returning the frequency of each whitespace-separated word. This is your in-app checker challenge.",
+    "companies": "Screening / fundamentals",
+    "source_name": "Consensus checker + strings docs",
+    "source_url": "https://pkg.go.dev/strings#Fields",
+    "model_answer": "`strings.Fields` splits on runs of whitespace (handles tabs/newlines/multiple spaces). Loop and increment a `map[string]int`. O(n) over the input.\n\nInterview extensions to be ready for: case-insensitive (lower-case first), strip punctuation, stream very large files with `bufio.Scanner` set to `ScanWords` instead of loading everything into memory, and 'top-K most frequent words' (a heap — Step 2 heaps lesson).",
+    "challenge_slug": "word-count"
+  },
+  {
+    "slug": "iq-wc-top-k-preview",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Once you have word counts, how do you return the K most frequent words efficiently?",
+    "companies": "Amazon, Meta",
+    "source_name": "LeetCode #347 (Top K Frequent)",
+    "source_url": "https://leetcode.com/problems/top-k-frequent-elements/",
+    "model_answer": "Don't fully sort (O(n log n)). Build the count map, then keep a **min-heap of size K**: push each (word,count); if the heap exceeds K, pop the smallest. O(n log K). Or use **bucket sort** by frequency for O(n) when counts are bounded by n.\n\nThis is the canonical Top-K pattern (covered in the Step 2 Heaps lesson) and a very common follow-up to any counting problem."
+  }
+]

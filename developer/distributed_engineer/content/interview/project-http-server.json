@@ -1,0 +1,46 @@
+[
+  {
+    "slug": "iq-httpsrv-servemux-122-pathparams",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Using only net/http (Go 1.22+), register a route GET /notes/{id} that returns 405 for non-GET and extracts the id. No third-party router.",
+    "companies": "Common Go interviews",
+    "source_name": "Go Blog — Routing Enhancements for Go 1.22",
+    "source_url": "https://go.dev/blog/routing-enhancements",
+    "model_answer": "Go 1.22's `ServeMux` added **method matching** and **wildcards**, so you no longer hand-roll path parsing or method switches:\n\n```go\nmux := http.NewServeMux()\nmux.HandleFunc(\"GET /notes/{id}\", func(w http.ResponseWriter, r *http.Request) {\n    id := r.PathValue(\"id\")          // wildcard value\n    w.Header().Set(\"Content-Type\", \"application/json\")\n    fmt.Fprintf(w, `{\"id\":%q}`, id)\n})\nhttp.ListenAndServe(\":8080\", mux)\n```\n\nKey facts to state: the method goes **in the pattern** (`GET /notes/{id}`) and a non-matching method gets an automatic **405** with an `Allow` header — you don't write that branch. `{id}` matches one segment; `{path...}` matches the rest. Precedence is by **specificity** (most-specific pattern wins), not registration order, so `/notes/{id}` and `/notes/new` coexist. Before 1.22 you'd register `/notes/` (a prefix) and parse `r.URL.Path` yourself — mention that to show you know what the feature buys you.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-httpsrv-middleware",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Write a logging middleware in net/http that records method, path, status, and duration of every request. Show how it wraps a handler.",
+    "companies": "Common Go interviews",
+    "source_name": "Go pkg — net/http (Handler / HandlerFunc)",
+    "source_url": "https://pkg.go.dev/net/http#Handler",
+    "model_answer": "Middleware is a function `func(http.Handler) http.Handler` that wraps a handler, doing work before/after `next`. To capture the **status** you wrap the `ResponseWriter` (it isn't readable otherwise):\n\n```go\ntype statusRecorder struct {\n    http.ResponseWriter\n    status int\n}\nfunc (r *statusRecorder) WriteHeader(c int) { r.status = c; r.ResponseWriter.WriteHeader(c) }\n\nfunc Logging(next http.Handler) http.Handler {\n    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n        start := time.Now()\n        rec := &statusRecorder{ResponseWriter: w, status: 200} // 200 if handler never sets it\n        next.ServeHTTP(rec, r)\n        log.Printf(\"%s %s %d %s\", r.Method, r.URL.Path, rec.status, time.Since(start))\n    })\n}\n\n// wrap the whole mux:\nhttp.ListenAndServe(\":8080\", Logging(mux))\n```\n\nSignals: the wrap-the-Writer trick to read status, defaulting to 200, and that middlewares **compose** (`A(B(C(mux)))`) — exactly the chain Echo/Gin build for you.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-httpsrv-graceful-shutdown",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Replace http.ListenAndServe with graceful shutdown: on SIGINT/SIGTERM, stop accepting connections, let in-flight requests finish, and bound it with a timeout.",
+    "companies": "Systems / infra interviews",
+    "source_name": "Go pkg — http.Server.Shutdown",
+    "source_url": "https://pkg.go.dev/net/http#Server.Shutdown",
+    "model_answer": "Use an explicit `*http.Server` and `srv.Shutdown(ctx)` — it stops accepting new connections and waits for active requests to finish, bounded by the context:\n\n```go\nsrv := &http.Server{Addr: \":8080\", Handler: mux}\nctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)\ndefer stop()\n\ngo func() {\n    if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {\n        log.Fatal(err)\n    }\n}()\n\n<-ctx.Done()                 // signal received\nstop()                       // restore default signal handling\nshCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)\ndefer cancel()\nif err := srv.Shutdown(shCtx); err != nil {\n    log.Printf(\"forced shutdown: %v\", err) // timeout exceeded\n}\n```\n\nPoints: `ListenAndServe` returns `http.ErrServerClosed` on a clean shutdown — treat it as normal, not an error. The timeout is the *deadline* for draining; past it, remaining connections are dropped. This is what every Kubernetes/redeploy cycle relies on.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-httpsrv-request-lifecycle",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Trace the lifecycle of one request through a net/http server, from accepted connection to bytes on the wire. Where can you no longer change the status code, and why is concurrency relevant?",
+    "companies": "Common Go interviews",
+    "source_name": "Go pkg — net/http (Server / ResponseWriter)",
+    "source_url": "https://pkg.go.dev/net/http",
+    "model_answer": "1. The server's accept loop takes a TCP connection and serves it **on its own goroutine** (and reuses it for keep-alive).\n2. It parses the bytes into an `*http.Request`.\n3. The `ServeMux` matches `r.Method`+`r.URL.Path` to a handler.\n4. Your handler runs: set headers, then `WriteHeader(status)`, then `Write(body)`.\n5. The response is flushed; the connection is closed or kept alive.\n\n**You can no longer change the status (or headers) after the first `Write`** — the first write flushes the status line and headers onto the wire, so later `WriteHeader`/`Header().Set` calls are ignored (Go logs \"superfluous WriteHeader\"). Hence: set headers and status *before* writing the body.\n\n**Concurrency matters** because each request runs on its own goroutine, so any shared state handlers touch (an in-memory map/slice, a counter) is accessed concurrently and must be guarded (`sync.Mutex`/`RWMutex`/atomics) or you get a data race — catch it with `go test -race`.",
+    "challenge_slug": ""
+  }
+]

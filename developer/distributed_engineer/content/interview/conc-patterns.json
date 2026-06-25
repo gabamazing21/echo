@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-pat-pipeline-error",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "In a read→transform→write pipeline, if the write stage fails, how do you make the upstream stages stop instead of blocking forever?",
+    "companies": "Backend / data interviews",
+    "source_name": "Go blog — Pipelines and cancellation",
+    "source_url": "https://go.dev/blog/pipelines",
+    "model_answer": "Thread a `context.Context` (or a shared `done` channel) through every stage; each stage `select`s `ctx.Done()` on BOTH its sends and receives. When write fails it cancels the ctx, so upstream stages unblock from a send and return, closing their output channels — no goroutine leaks. Without this, a failed/abandoned consumer leaves the producer blocked on a send forever. The canonical pattern is errgroup-per-stage + ctx; the signal is 'cancellation propagates so nothing blocks on a dead downstream.'"
+  },
+  {
+    "slug": "iq-pat-fanout-backpressure",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "A fan-out stage has 10 workers; one is slow and its results buffer up. How do you stop memory from exploding?",
+    "companies": "Backend / data interviews",
+    "source_name": "Reactive Manifesto — Back-Pressure",
+    "source_url": "https://www.reactivemanifesto.org/glossary#Back-Pressure",
+    "model_answer": "Bound the channels (buffered with a fixed capacity). When the slow consumer can't keep up, the bounded output channel fills, which **blocks the fast producers** — backpressure flows upstream and the whole pipeline self-throttles to the slowest stage's rate. Unbounded queues hide the problem until OOM. If you can't slow producers (e.g. external firehose), you must shed load: drop, sample, or spill to disk, and emit a metric. The lesson: bounded buffers turn 'memory blowup' into 'graceful slowdown'."
+  },
+  {
+    "slug": "iq-pat-fan-in",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Merge results from N worker channels into one output channel that closes only after all inputs are drained.",
+    "companies": "Go / backend interviews",
+    "source_name": "Go blog — Pipelines (fan-in)",
+    "source_url": "https://go.dev/blog/pipelines",
+    "model_answer": "One goroutine per input copying into a shared `out`, a `sync.WaitGroup` counting them, and a closer goroutine:\n\n```go\nfunc merge(cs ...<-chan int) <-chan int {\n  out := make(chan int); var wg sync.WaitGroup\n  for _, c := range cs { wg.Add(1); go func(c <-chan int){ defer wg.Done(); for v := range c { out <- v } }(c) }\n  go func(){ wg.Wait(); close(out) }()\n  return out\n}\n```\n\nThe `wg.Wait(); close(out)` in its own goroutine is the crux — close once, after every input finishes."
+  }
+]

@@ -1,0 +1,68 @@
+[
+  {
+    "slug": "iq-async-lost-write-trace",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "A single-leader database uses asynchronous replication. A client writes X=5, the leader acks 'success', and then the leader crashes one millisecond later. Walk through what happens during failover and explain whether X=5 can be lost despite the client receiving an acknowledgment.",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "DDIA Ch.5 — Replication",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "Yes, the acknowledged write can be **silently lost**. Trace it:\n\n1. Client sends `X=5` to the leader.\n2. Leader writes locally and **immediately acks** the client (async = no wait for followers).\n3. Leader crashes before the change reaches any follower.\n4. Failover promotes the most up-to-date *follower* — but that follower never received `X=5`. The new leader's value is the old `X`.\n5. The client believes `X=5` is durable; a subsequent read returns the stale value.\n\nThe danger compounds: when the old leader rejoins as a follower, its un-replicated writes conflict with the new leader's timeline. The common 'fix' is to **discard** the old leader's extra writes — permanently losing `X=5`. This is why async replication offers no durability guarantee for the most recent writes. Semi-synchronous replication (≥1 sync follower) narrows the window, but the write is still lost if *both* the leader and that one sync follower fail together.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-failover-split-brain-fencing",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Design the failover procedure for a single-leader system so that a wrongly-declared-dead old leader cannot corrupt data after a new leader is promoted. Explain split brain and how fencing tokens prevent it. Why isn't 'promote the most up-to-date follower' sufficient on its own?",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "Martin Kleppmann — How to do distributed locking",
+    "source_url": "https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html",
+    "model_answer": "**Split brain**: the old leader isn't actually dead (just GC-paused or network-partitioned). It still thinks it's leader and keeps accepting writes while the new leader does too — two leaders, conflicting writes, corruption.\n\nPicking the most up-to-date follower only decides *who* gets promoted; it does nothing to stop the zombie old leader from writing.\n\n**Fencing tokens** fix this. The leader-election service hands each new leader a **monotonically increasing token** (e.g. ZooKeeper `zxid` or a Raft term). Every write to shared storage carries that token. The storage layer remembers the highest token it has seen and **rejects any write with a lower token**.\n\n```\nLeader A acquires lease, token=33, writes (accepted)\nA pauses; B promoted, token=34\nB writes (accepted, 34 >= 34)\nA resumes, writes with token=33 -> REJECTED (33 < 34)\n```\n\nThe stale leader is *fenced out* at the resource, not merely asked to behave. This shifts safety from trusting nodes to a single monotonic check enforced where writes actually land.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-quorum-rwn-math",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "In a leaderless (Dynamo-style) system with N=3 replicas, explain the quorum condition R + W > N. Why does it guarantee a read overlaps the latest write? Give concrete (R, W) configurations for read-heavy vs. write-heavy workloads, and state what R + W > N does NOT guarantee.",
+    "companies": "Amazon (Dynamo)",
+    "source_name": "Amazon Dynamo Paper (SOSP 2007)",
+    "source_url": "https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf",
+    "model_answer": "With N replicas, a write goes to W of them and a read queries R. If **R + W > N**, the read set and write set must share at least one node (pigeonhole): `(R) + (W) > N` means they can't be disjoint, so a read always touches ≥1 replica holding the latest write. Versioning (timestamps/vector clocks) lets the reader pick the newest.\n\nFor **N=3**:\n- Balanced: `W=2, R=2` (2+2>3). Tolerates one node down for both reads and writes.\n- Read-heavy: `W=3, R=1` — fast reads, but writes block if any replica is down.\n- Write-heavy: `W=1, R=3` — fast writes, slow/fragile reads.\n\n**What it does NOT guarantee**: linearizability. Concurrent writes still need conflict resolution (vector clocks / LWW). And **sloppy quorums** with hinted handoff write to *substitute* nodes during failures — the W successful writes may not be on the 'home' replicas, so R+W>N can be satisfied yet a later read sees stale data. Quorum overlap is necessary, not sufficient, for strong consistency.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-sloppy-quorum-read-repair",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Explain sloppy quorums with hinted handoff, and how leaderless systems heal staleness using read repair and anti-entropy. Why can a sloppy quorum violate the R + W > N overlap guarantee even when W writes and R reads both 'succeed'?",
+    "companies": "Amazon (Dynamo)",
+    "source_name": "Amazon Dynamo Paper (SOSP 2007)",
+    "source_url": "https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf",
+    "model_answer": "A **strict** quorum uses the N nodes that *own* a key. When some of those are unreachable, a **sloppy quorum** accepts writes on other reachable nodes to stay available. Each such write carries a **hint** saying which home node it belongs to; when the home node recovers, the temporary holder forwards the data — **hinted handoff**.\n\nThe catch: during the outage, your W writes landed on *substitute* nodes, while a reader querying the R *home* nodes may touch none of them. So W and R can both report success and still **not overlap** — R+W>N's guarantee assumes the *same* N home nodes. Sloppy quorums trade overlap for availability.\n\nTwo healing mechanisms reconcile divergence:\n- **Read repair**: on a read, if replicas disagree, the coordinator writes the newest version back to the stale ones — opportunistic, fixes frequently-read keys.\n- **Anti-entropy**: a background process compares replicas (Dynamo uses **Merkle trees** to find differing key ranges cheaply) and syncs them — catches rarely-read keys.\n\nTogether they drive the system toward **eventual** consistency.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-read-your-writes-impl",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "A user posts a comment (write to leader), then immediately refreshes the page (read from a lagging follower) and their own comment is missing. Design read-your-writes consistency on top of asynchronous replication. Why is read-your-writes weaker than strong/linearizable consistency?",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "DDIA Ch.5 — Replication",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "Read-your-writes guarantees a user always sees their *own* recent writes (not necessarily others'). Implementation strategies:\n\n1. **Read from leader for own data**: route reads of things the user can have modified (their profile, their comments) to the leader; everything else can hit followers.\n2. **Track write timestamp**: after a write, store the client's last-write logical timestamp/LSN (in a cookie or session). On reads, require a follower at least that up-to-date; if a follower lags behind it, retry elsewhere or fall back to the leader.\n3. **Recency window**: for ~1 minute after any write by the user, route all that user's reads to the leader.\n\nWith multiple devices you may need **cross-device** read-your-writes — centralize the timestamp server-side rather than per-device.\n\n**Why it's weaker**: read-your-writes is a *per-user* guarantee about your own writes. Two different users can still observe each other's writes in different orders, and stale reads of *other* people's data are allowed. Linearizability is a global, all-clients ordering — strictly stronger and far more expensive.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-sync-vs-async-failover-tradeoff",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "Compare synchronous, asynchronous, and semi-synchronous replication specifically in terms of what each loses during a leader failure. Which acknowledged writes survive, and under what failure does semi-sync still lose data?",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "System Design Primer — Replication & Availability",
+    "source_url": "https://github.com/donnemartin/system-design-primer#replication",
+    "model_answer": "All three differ in *when* the leader acks the client:\n\n- **Synchronous**: leader waits for the follower(s) to confirm before acking. An acked write is guaranteed on ≥1 follower, so failover loses nothing acked — but if a sync follower is slow/down, **writes block** (availability hit).\n- **Asynchronous**: leader acks immediately. Fast and available, but any write not yet shipped is **lost** if the leader crashes — even though the client was told 'success'.\n- **Semi-synchronous**: one synchronous follower (a guaranteed fresh copy), the rest async. You get near-async latency while ensuring an acked write exists in ≥2 places.\n\n**Where semi-sync still loses data**: it only guarantees the write is on the leader *and* the one sync follower. If **both** fail together (e.g. shared rack/power, or the sync follower was promoted then itself dies), the acked write is gone. Durability scales with how many *independent* copies must confirm before ack — there's no free lunch, only how wide you spread the bet against latency.",
+    "challenge_slug": ""
+  }
+]

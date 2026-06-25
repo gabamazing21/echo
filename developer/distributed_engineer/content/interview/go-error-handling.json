@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-err-wrap-is-as",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "What is the difference between `fmt.Errorf` with `%v` and with `%w`, and how do `errors.Is` and `errors.As` use it?",
+    "companies": "Common Go interviews",
+    "source_name": "Go Blog — Working with Errors",
+    "source_url": "https://go.dev/blog/go1.13-errors",
+    "model_answer": "`%v` formats the error into a new string — the original error is *lost* (can't be introspected). `%w` **wraps** it, preserving a chain you can unwrap.\n\n`errors.Is(err, target)` walks the wrap chain looking for a sentinel match (e.g. `errors.Is(err, sql.ErrNoRows)`). `errors.As(err, &target)` walks the chain looking for a *type* match and fills `target` so you can read its fields.\n\nRule: wrap with `%w` at each layer to add context (`fmt.Errorf(\"load user %d: %w\", id, err)`) but only expose sentinels/types you want callers to depend on. Over-wrapping leaks internals; decide your error API deliberately."
+  },
+  {
+    "slug": "iq-err-panic-vs-error",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "When is it appropriate to `panic` vs return an `error`? What does `recover` do?",
+    "companies": "Common Go interviews",
+    "source_name": "Effective Go — errors",
+    "source_url": "https://go.dev/doc/effective_go#errors",
+    "model_answer": "Return an **error** for expected failure conditions (bad input, not found, network down) — they're values the caller handles. **panic** is for programmer bugs / truly unrecoverable states (nil deref, impossible invariant violated). Don't use panic for control flow.\n\n`recover` (only useful in a deferred function) stops a panic unwinding the stack — used at trust boundaries, e.g. an HTTP server's recover middleware turns a handler panic into a 500 instead of crashing the process. Inside libraries, convert recovered panics back into returned errors so callers aren't surprised."
+  },
+  {
+    "slug": "iq-err-custom-type",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Define a custom error type carrying structured fields (e.g. a failed HTTP call with a status code) and show how a caller inspects it.",
+    "companies": "Backend Go roles",
+    "source_name": "Go Blog — Working with Errors",
+    "source_url": "https://go.dev/blog/go1.13-errors",
+    "model_answer": "Make a struct implement `error` (an `Error() string` method), then let callers recover the fields with `errors.As`:\n\n```go\ntype APIError struct { Status int; URL string }\nfunc (e *APIError) Error() string { return fmt.Sprintf(\"%s -> %d\", e.URL, e.Status) }\n\n// caller:\nvar apiErr *APIError\nif errors.As(err, &apiErr) && apiErr.Status == 429 {\n    // back off and retry\n}\n```\n\nKey points interviewers want: implement `error` on the pointer, optionally add `Unwrap()` to keep a wrapped cause in the chain, and use `errors.As` (not a type assertion) so it works through wrapping."
+  }
+]

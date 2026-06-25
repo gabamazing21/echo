@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-authp-login-ratelimit",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Protect /login from brute-force and credential stuffing. What do you rate-limit on, and what are the trade-offs?",
+    "companies": "Security / backend interviews",
+    "source_name": "OWASP — Blocking Brute Force Attacks",
+    "source_url": "https://owasp.org/www-community/controls/Blocking_Brute_Force_Attacks",
+    "model_answer": "Rate-limit per account AND per IP (attackers spread across IPs; victims share NAT'd IPs). Use your token-bucket limiter (Step 5) backed by shared state (Redis) so limits hold across instances. Add exponential backoff/lockout after N failures, CAPTCHA on suspicion, and breached-password checks (HaveIBeenPwned k-anonymity API). Trade-off: too strict locks out real users / enables a denial-of-service against a victim's account — prefer slowdowns + risk signals over hard lockouts. Always return generic 'invalid credentials'."
+  },
+  {
+    "slug": "iq-authp-401-vs-403",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "When should an endpoint return 401 vs 403? And why might you return 404 instead of 403?",
+    "companies": "Backend / API interviews",
+    "source_name": "MDN — 401 / 403",
+    "source_url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+    "model_answer": "**401 Unauthorized** = not authenticated (no/invalid credentials) — 'I don't know who you are; log in'. **403 Forbidden** = authenticated but not allowed — 'I know you, you can't do this'. Subtlety: returning 403 for another user's resource *confirms it exists*; to avoid leaking existence (IDOR enumeration), many APIs return **404** for resources you may not access. So: 401 for auth, 403 for authorization, 404 to hide existence from unauthorized users."
+  },
+  {
+    "slug": "iq-authp-concurrent-claim",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Two requests try to claim the same one-time resource (e.g. mark a job 'processing', or redeem a coupon). Exactly one must win. Design it.",
+    "companies": "Amazon, Stripe, backend interviews",
+    "source_name": "PostgreSQL docs — SELECT FOR UPDATE",
+    "source_url": "https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE",
+    "model_answer": "Make the win atomic in the DB, not in app code. Options: (1) **Conditional UPDATE** — `UPDATE jobs SET state='processing' WHERE id=$1 AND state='pending'` and check `RowsAffected()==1`; the loser gets 0 (optimistic, no locks). (2) `SELECT ... FOR UPDATE` to lock the row, decide, then write (pessimistic). (3) a unique constraint on a claim row so the second insert fails with 23505. Don't read-then-write in Go — that's the lost-update race (Step 6). The conditional UPDATE is usually cleanest."
+  },
+  {
+    "slug": "iq-authp-authz-test",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Write a test that catches a broken-access-control bug where user A can read user B's bookmarks.",
+    "companies": "Security / backend interviews",
+    "source_name": "OWASP Top 10 — Broken Access Control",
+    "source_url": "https://owasp.org/Top10/A01_2021-Broken_Access_Control/",
+    "model_answer": "Seed two users with their own bookmarks; authenticate as A; request B's bookmark by id; assert the response is 404/403, not B's data. Repeat for every mutating route (update/delete). Broken access control is the #1 OWASP risk and the bug is almost always a missing `WHERE user_id = $caller` (or ownership check) — so the test asserts the *negative*: A cannot see, edit, or delete B's rows. Make it table-driven across all protected endpoints."
+  }
+]

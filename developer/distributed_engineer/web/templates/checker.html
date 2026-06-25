@@ -1,0 +1,30 @@
+{{define "content"}}
+<div class="eyebrow">The checker</div>
+<h1 class="page">Code checker</h1>
+<p class="lead">Write Go right here. Hit <b>Run checks</b> and your code is compiled against hidden tests — pass or fail, instantly, the ALX way. Stuck or want feedback? Ask for a Claude review.</p>
+
+<div class="qsel">
+  {{range .Steps}}<a class="qnum {{if eq . $.Step}}on{{end}}" href="/checker/{{.}}">{{.}}</a>{{end}}
+</div>
+
+{{range .Challenges}}
+<div class="panel q" id="ch-{{.Slug}}" data-challenge="{{.ID}}">
+  <div class="qhead">
+    <span class="tag t-Code">Challenge</span>
+    {{if .HasLast}}{{if .LastPassed}}<span class="due ok">passed ✓</span>{{else}}<span class="due over">not passing yet</span>{{end}}{{end}}
+  </div>
+  <p class="qtext">{{.Title}}</p>
+  <div class="res-why" style="margin-bottom:12px">{{.Prompt}}</div>
+  <textarea class="code-editor" data-code spellcheck="false">{{if .HasLast}}{{.LastCode}}{{else}}{{.StarterCode}}{{end}}</textarea>
+  <div class="code-actions">
+    <button class="qbtn" data-run="{{.ID}}">Run checks ▶</button>
+    <button class="qbtn ghost" data-review="{{.ID}}" {{if not $.ClaudeEnabled}}title="Set ANTHROPIC_API_KEY to enable"{{end}}>Get Claude review</button>
+    <span class="run-status" data-status></span>
+  </div>
+  <pre class="checker-out" data-out hidden></pre>
+  <div class="expl review-out" data-review-out hidden></div>
+</div>
+{{else}}
+<div class="panel q"><p class="qtext">No challenges for this step yet.</p></div>
+{{end}}
+{{end}}

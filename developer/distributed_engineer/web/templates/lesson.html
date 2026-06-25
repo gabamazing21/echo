@@ -1,0 +1,49 @@
+{{define "content"}}
+<div class="lesson-wrap">
+  <a class="backlink" href="/roadmap">← back to roadmap</a>
+  <div class="lesson-meta" style="margin-top:14px">
+    <span>STEP {{.Lesson.StepID}}</span>
+    {{if .Lesson.EstMin}}<span>≈ {{.Lesson.EstMin}} min</span>{{end}}
+  </div>
+  <article class="lesson-body">
+    {{safe .Lesson.BodyHTML}}
+  </article>
+
+  {{if .Interview}}
+  <section class="interview" id="interview">
+    <h2 class="iv-head">Interview prep</h2>
+    <p class="iv-sub">Real questions from sources that big-tech interviews draw on. Try each one cold; reveal the model answer only after you've attempted it, then practice it for real at the source.</p>
+    {{range .Interview}}
+    <div class="panel iv-card" data-iq="{{.Slug}}">
+      <div class="iv-tags">
+        <span class="tag t-{{if eq .Kind "coding"}}Code{{else if eq .Kind "sql"}}Code{{else}}Quiz{{end}}">{{.Kind}}</span>
+        {{if .Difficulty}}<span class="pill iv-diff iv-{{.Difficulty}}">{{.Difficulty}}</span>{{end}}
+        {{if .Companies}}<span class="pill">{{.Companies}}</span>{{end}}
+        {{if .SourceName}}<span class="pill">{{.SourceName}}</span>{{end}}
+      </div>
+      <p class="iv-prompt">{{.Prompt}}</p>
+      <div class="code-actions">
+        {{if or (eq .Kind "coding") (eq .Kind "sql")}}
+          {{if .HasChallenge}}<a class="qbtn" href="/checker/{{.ChallengeStep}}#ch-{{.ChallengeSlug}}">Attempt in Consensus checker →</a>{{end}}
+          {{if .SourceURL}}<a class="qbtn ghost" href="{{.SourceURL}}" target="_blank" rel="noopener">Solution &amp; retry on source ↗</a>{{end}}
+        {{else}}
+          {{if .ModelAnswerHTML}}<button class="qbtn" data-iq-reveal="{{.Slug}}">{{if .Revealed}}Hide model answer{{else}}Reveal model answer{{end}}</button>{{end}}
+          {{if .SourceURL}}<a class="qbtn ghost" href="{{.SourceURL}}" target="_blank" rel="noopener">Study the canonical answer ↗</a>{{end}}
+        {{end}}
+      </div>
+      {{if and .ModelAnswerHTML .Revealed}}<div class="expl iv-answer" data-iq-answer>{{safe .ModelAnswerHTML}}</div>{{end}}
+      <div class="iv-outcome">
+        <button class="iv-mark {{if eq .Outcome "got_it"}}on-got{{end}}" data-iq-outcome="got_it" data-iq-slug="{{.Slug}}">✓ Got it</button>
+        <button class="iv-mark {{if eq .Outcome "review"}}on-review{{end}}" data-iq-outcome="review" data-iq-slug="{{.Slug}}">↻ Needs review</button>
+      </div>
+    </div>
+    {{end}}
+  </section>
+  {{end}}
+
+  <div style="margin-top:30px;display:flex;gap:10px;flex-wrap:wrap">
+    <a class="qbtn" href="/today">Back to Today →</a>
+    <a class="qbtn ghost" href="/quiz/{{.Lesson.StepID}}">Take the Step {{.Lesson.StepID}} quiz</a>
+  </div>
+</div>
+{{end}}

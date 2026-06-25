@@ -1,0 +1,22 @@
+[
+  {
+    "slug": "iq-todo-json-tags",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "How do struct tags control JSON (un)marshaling in Go? What happens to unexported fields?",
+    "companies": "Backend Go roles",
+    "source_name": "Go stdlib — encoding/json",
+    "source_url": "https://pkg.go.dev/encoding/json",
+    "model_answer": "`json:\"name,omitempty\"` tags rename a field in JSON and add options (`omitempty` drops zero values; `-` skips the field). Marshaling/unmarshaling uses reflection and only sees **exported** (capitalized) fields — unexported fields are invisible to `encoding/json`, a very common beginner bug ('why is my field always empty?').\n\nFollow-ups: unknown JSON keys are ignored by default (use a `Decoder` with `DisallowUnknownFields` to reject them); numbers decode to `float64` when the target is `any`."
+  },
+  {
+    "slug": "iq-todo-atomic-write",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Two invocations of your file-backed to-do CLI run at the same time. What can go wrong, and how do you make saves safe?",
+    "companies": "Systems / backend roles",
+    "source_name": "POSIX rename semantics",
+    "source_url": "https://man7.org/linux/man-pages/man2/rename.2.html",
+    "model_answer": "Concurrent processes can interleave read-modify-write and clobber each other's changes (lost update), or a crash mid-write can leave a truncated/corrupt file.\n\nFixes: (1) **Atomic write** — write to a temp file in the same directory, then `os.Rename` over the target; rename is atomic on POSIX, so readers see either the old or new file, never a half-written one. (2) **File locking** (`flock`) to serialize writers. (3) For real concurrency, move to a database (foreshadows Step 4/6). This 'temp-file-then-rename' pattern is exactly what the MapReduce lab (Step 8) uses for atomic output."
+  }
+]

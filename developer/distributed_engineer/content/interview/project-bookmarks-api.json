@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-bm-cursor-pagination",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Your GET /bookmarks must page through 10M rows. Why is OFFSET pagination a trap at scale, and how does cursor (keyset) pagination fix it?",
+    "companies": "Meta, Slack, Stripe",
+    "source_name": "Use The Index, Luke! — Paging",
+    "source_url": "https://use-the-index-luke.com/no-offset",
+    "model_answer": "`LIMIT 20 OFFSET 1000000` makes the DB scan and discard a million rows — O(offset), and it can skip/duplicate rows when data changes between pages. **Keyset/cursor** pagination instead remembers the last row's sort key and does `WHERE (created_at, id) < ($1,$2) ORDER BY created_at DESC, id DESC LIMIT 20`. With an index on the sort key it's O(limit) regardless of depth, and stable under inserts. Return an opaque `next_cursor` (base64 of the keys). Trade-off: no random page jumps."
+  },
+  {
+    "slug": "iq-bm-filter-sort",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Add filtering (?q=) and sorting to the bookmarks list. How do you keep it index-friendly and injection-safe?",
+    "companies": "Backend / API interviews",
+    "source_name": "PostgreSQL docs — Indexes",
+    "source_url": "https://www.postgresql.org/docs/current/indexes.html",
+    "model_answer": "Whitelist sortable columns (never interpolate a client-supplied `ORDER BY` string — that's injection); map an enum like `sort=created` to a fixed column. Use parameterized `WHERE` clauses; for substring search use a trigram index (`pg_trgm`) or full-text, not unindexed `LIKE '%q%'` which forces a seq scan. Combine the filter+sort into a composite index that matches the query so it's a single index scan."
+  },
+  {
+    "slug": "iq-bm-race-safety",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Prove your in-memory store is free of data races under concurrent requests. What tool, and what's the fix if it isn't?",
+    "companies": "Go / backend interviews",
+    "source_name": "Go blog — Race Detector",
+    "source_url": "https://go.dev/blog/race-detector",
+    "model_answer": "Run the handler tests with `go test -race` (and `-race` in CI). A `map` written by multiple goroutines without synchronization is a data race — corruption and nondeterministic crashes. Fix: guard the map with a `sync.RWMutex` (RLock for reads, Lock for writes) or use `sync.Map` for high-churn key spaces. The race detector instruments memory access and prints the two conflicting goroutines + lines."
+  }
+]

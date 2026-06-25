@@ -1,0 +1,53 @@
+[
+  {
+    "slug": "iq-graph-num-islands",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Number of Islands: count 4-directionally connected groups of land ('1') in a grid. Attempt in the checker.",
+    "companies": "Amazon, Google, Meta, Microsoft",
+    "source_name": "NeetCode 150 / LeetCode #200",
+    "source_url": "https://leetcode.com/problems/number-of-islands/",
+    "model_answer": "A grid is an implicit graph. Scan every cell; on an unvisited '1', run **BFS or DFS** to flood-fill the whole island (mark cells visited, e.g. set to '0'), and count one island per flood. O(rows·cols) — each cell visited once. The signal: recognize the grid as a graph and pick a traversal. Watch bounds and the visited-marking so you don't double-count or recurse forever.",
+    "challenge_slug": "number-of-islands"
+  },
+  {
+    "slug": "iq-graph-course-schedule",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Course Schedule: given prerequisite pairs, can you finish all courses? (Is the directed graph acyclic?)",
+    "companies": "Amazon, Google, Meta, Uber",
+    "source_name": "NeetCode 150 / LeetCode #207",
+    "source_url": "https://leetcode.com/problems/course-schedule/",
+    "model_answer": "This is **cycle detection on a directed graph** = does a topological order exist. Kahn's algorithm: compute in-degrees, repeatedly remove in-degree-0 nodes; if you remove all, no cycle (schedulable). Or DFS with three colors (white/gray/black) — a back-edge to a gray node is a cycle. O(V+E). Recognizing 'prerequisites → DAG → topo sort/cycle detection' is the whole point."
+  },
+  {
+    "slug": "iq-graph-clone",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Clone Graph: deep-copy a connected undirected graph given a node reference.",
+    "companies": "Meta, Amazon, Google",
+    "source_name": "NeetCode 150 / LeetCode #133",
+    "source_url": "https://leetcode.com/problems/clone-graph/",
+    "model_answer": "BFS or DFS while keeping a `map[*Node]*Node` from original→clone. When you first see a node, create its clone and record it; for each neighbor, clone it (or reuse the map entry) and wire the edge. The map both prevents infinite loops on cycles and ensures shared nodes are cloned once. Tests careful traversal + visited-tracking with object identity."
+  },
+  {
+    "slug": "iq-graph-provinces-unionfind",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Number of Provinces: given an adjacency matrix of cities, count connected components.",
+    "companies": "Amazon, Bloomberg",
+    "source_name": "NeetCode 150 / LeetCode #547",
+    "source_url": "https://leetcode.com/problems/number-of-provinces/",
+    "model_answer": "Two clean answers: (1) DFS/BFS from each unvisited city, counting components; (2) **Union-Find** — union every connected pair, then count distinct roots. Union-find shines when edges arrive incrementally or you also need 'are these two connected?' queries. With path compression + union by rank it's near-O(1) per op. Good moment to show you know union-find, not just traversal."
+  },
+  {
+    "slug": "iq-graph-dijkstra",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "How do you find the shortest path in a graph with non-negative weighted edges, and how does it relate to BFS?",
+    "companies": "Google, Amazon, maps/routing interviews",
+    "source_name": "LeetCode #743 (Network Delay Time)",
+    "source_url": "https://leetcode.com/problems/network-delay-time/",
+    "model_answer": "**Dijkstra** = BFS where, instead of a plain queue, you use a **min-heap** keyed by distance: pop the closest unsettled node, relax its edges (update neighbor distances), repeat. O((V+E) log V). It needs non-negative weights (a settled node is final); with negative edges use **Bellman-Ford** (O(VE)). The one-line connection: unweighted BFS is Dijkstra with all weights = 1. Heaps (next lesson) are what make it efficient."
+  }
+]

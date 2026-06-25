@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-chan-nil",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "What happens on send/receive with a nil channel, and how is that property actually useful in a select?",
+    "companies": "Senior Go interviews",
+    "source_name": "Go spec — Channels",
+    "source_url": "https://go.dev/ref/spec#Channel_types",
+    "model_answer": "Send or receive on a **nil** channel blocks **forever**; a `select` case on a nil channel is never chosen. That's not just trivia — you exploit it to *disable a select case dynamically*: set a channel variable to nil to turn its branch off (e.g. in a producer/consumer, nil out the input channel once it's drained so the loop only waits on output). Contrast with a **closed** channel: receiving returns immediately with the zero value and `ok=false`. nil = block forever; closed = never blocks."
+  },
+  {
+    "slug": "iq-chan-closed",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "What happens if you send on a closed channel? How do you detect a channel is closed, and who should close it?",
+    "companies": "Go / backend interviews",
+    "source_name": "Effective Go — Channels",
+    "source_url": "https://go.dev/doc/effective_go#channels",
+    "model_answer": "Sending on a closed channel **panics**; closing an already-closed channel panics; closing a nil channel panics. Receiving from a closed channel returns the zero value with `ok=false` (`v, ok := <-ch`), and `range` over it ends. Rule: only the **sender** closes, and only when it's the sole sender — closing is a 'no more values' signal to receivers, not a cleanup step. For multiple senders, coordinate with a `sync.WaitGroup` + a single closer goroutine, or use a separate done channel."
+  },
+  {
+    "slug": "iq-chan-first-result",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Query 3 replicas in parallel and return the first response, cancelling the slower two. Make sure no goroutine leaks.",
+    "companies": "Backend / distributed interviews",
+    "source_name": "Go blog — Pipelines and cancellation",
+    "source_url": "https://go.dev/blog/pipelines",
+    "model_answer": "Derive a cancellable context, launch one goroutine per replica passing `ctx`, and have each send its result on a **buffered** channel (size = N) so late finishers don't block and leak:\n\n```go\nctx, cancel := context.WithCancel(parent); defer cancel()\nout := make(chan Result, 3)\nfor _, r := range replicas { go func(r Replica){ out <- r.Do(ctx) }(r) }\nfirst := <-out   // take the winner\ncancel()         // tells the others (via ctx) to stop\n```\n\nThe buffered channel + `cancel()` is the key: unbuffered would leak the two losers blocked on send."
+  },
+  {
+    "slug": "iq-chan-foobar",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Print FooBar Alternately: two goroutines, one prints 'foo', one prints 'bar', n times — output must be 'foobarfoobar...'.",
+    "companies": "Amazon, Microsoft",
+    "source_name": "LeetCode #1115",
+    "source_url": "https://leetcode.com/problems/print-foobar-alternately/",
+    "model_answer": "Two unbuffered channels ping-pong control between the goroutines. `foo` waits for the foo-token, prints, hands the bar-token; `bar` waits for the bar-token, prints, hands the foo-token back. Prime it by sending the first foo-token. This is the canonical 'two threads alternate' problem; the same baton-passing pattern (channels or two semaphores) generalizes to N alternating workers."
+  }
+]

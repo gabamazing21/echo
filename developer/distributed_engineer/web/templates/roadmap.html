@@ -1,0 +1,72 @@
+{{define "content"}}
+<div class="eyebrow">The route</div>
+<h1 class="page">Roadmap</h1>
+<p class="lead">Ten steps, amateur to employable. Open a step, work the tasks top to bottom, commit each as you finish. Lessons and resources live inside every step.</p>
+
+<div id="steps">
+{{range .Steps}}
+{{$s := .Step}}
+<div class="panel step {{if lt $s.DoneTasks $s.TotalTasks}}{{else}}{{end}}" data-step="{{$s.ID}}">
+  <button class="step-h" data-toggle="{{$s.ID}}">
+    <span class="step-num {{if $s.Full}}full{{end}}">{{pad2 $s.ID}}</span>
+    <span class="step-t"><span class="nm">{{$s.Phase}}</span><span class="dl">target · {{fmtDate $s.Deadline}}</span></span>
+    <span class="step-prog">
+      <span class="bar-track"><span class="bar-fill {{if $s.Full}}full{{end}}" style="width:{{pct $s.Frac}}%"></span></span>
+      <span class="step-frac">{{$s.DoneTasks}}/{{$s.TotalTasks}}</span>
+    </span>
+    <span class="chev">▸</span>
+  </button>
+  <div class="step-body">
+    {{range .Tasks}}
+    <div class="task">
+      <button class="commit {{if .Done}}done{{end}}" data-task="{{.ID}}" aria-label="Commit">{{if .Done}}✓{{end}}</button>
+      <div class="task-main">
+        <div class="task-top">
+          <span class="tag t-{{.Kind}}">{{.Kind}}</span>
+          <span class="due {{dueClass .Deadline}}">{{dueText .Deadline}}</span>
+          <span class="task-concept" style="margin:0">{{.Hrs}}h</span>
+          {{if .HasLesson}}<a class="lesson-link" href="/lesson/{{.LessonSlug}}">Lesson →</a>{{end}}
+        </div>
+        <p class="task-txt {{if .Done}}done{{end}}">{{.Title}}</p>
+        <div class="task-concept">▸ {{.Concept}}</div>
+        <div class="task-foot">
+          <select class="sel" data-status="{{.ID}}">
+            {{$cur := .Status}}
+            {{range $o := (list "Not started" "In progress" "Done" "Blocked")}}
+            <option {{if eq $o $cur}}selected{{end}}>{{$o}}</option>
+            {{end}}
+          </select>
+          <input class="note" data-note="{{.ID}}" placeholder="notes…" value="{{.Notes}}">
+        </div>
+      </div>
+    </div>
+    {{end}}
+    {{if .Extra}}
+    <div class="res-head">Interview-prep lessons · step {{$s.ID}}</div>
+    {{range .Extra}}
+    <div class="res"><div class="res-body">
+      <div class="res-nm"><a href="/lesson/{{.Slug}}">{{.Title}} →</a></div>
+      <div class="res-why">{{.Summary}}</div>
+      <div class="res-meta"><span class="pill">bonus</span>{{if .EstMin}}<span class="pill">≈ {{.EstMin}} min</span>{{end}}</div>
+    </div></div>
+    {{end}}
+    {{end}}
+    {{if .Resources}}
+    <div class="res-head">Resources · step {{$s.ID}}</div>
+    {{range .Resources}}
+    <div class="res"><div class="res-body">
+      <div class="res-nm"><a href="{{.Link}}" target="_blank" rel="noopener">{{.Name}} ↗</a></div>
+      <div class="res-why">{{.Why}}</div>
+      <div class="res-meta">
+        <span class="pill">{{.Kind}}</span>
+        <span class="pill {{if .IsFree}}free{{else}}paid{{end}}">{{if .IsFree}}Free{{else}}Paid{{end}}</span>
+        <span class="pill">{{.TimeLabel}}</span>
+      </div>
+    </div></div>
+    {{end}}
+    {{end}}
+  </div>
+</div>
+{{end}}
+</div>
+{{end}}

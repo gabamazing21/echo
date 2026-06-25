@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "iq-jh-tell-me-conflict",
+    "kind": "behavioral",
+    "difficulty": "medium",
+    "prompt": "Tell me about a time you had a conflict or disagreement with a teammate. How did you handle it?",
+    "companies": "Behavioral / all big-tech (universal STAR question)",
+    "source_name": "Tech Interview Handbook — 30 most common behavioral questions",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview-questions/",
+    "model_answer": "Use STAR and pick a *real, professional* disagreement (a design choice, a priority call), not a personality clash. **Situation/Task:** the substance of the disagreement and why it mattered. **Action:** how you handled it — you sought to understand their position first, brought data or trade-offs rather than opinions, and worked toward the decision that served the project. **Result:** the resolution and, ideally, a preserved relationship and a lesson. Interviewers test collaboration, empathy, and whether you make conflict productive. Listen-fors: you don't villainize the other person, you separated the idea from the ego, and you can disagree-and-commit. Avoid 'I was right and they came around' as the whole arc — show you were genuinely open. End on what you'd carry forward. Prepare this story in advance; conflict questions appear in nearly every behavioral loop, and a rehearsed-but-honest version beats improvising under pressure."
+  },
+  {
+    "slug": "iq-jh-time-you-failed",
+    "kind": "behavioral",
+    "difficulty": "medium",
+    "prompt": "Tell me about a time you failed. What happened and what did you learn?",
+    "companies": "Behavioral / all big-tech (universal STAR question)",
+    "source_name": "Tech Interview Handbook — 30 most common behavioral questions",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview-questions/",
+    "model_answer": "Choose a genuine failure with real stakes, not a humble-brag ('I work too hard'). STAR, with the weight on ownership and learning: **Situation/Task** sets up what was at risk; **Action** is honest about *your* mistake (shipped without enough tests, underestimated scope, missed a stakeholder); **Result** is the consequence *and* the concrete change you made so it can't recur. Interviewers are testing self-awareness, accountability, and growth — they want to see you can name a real failure without crumbling or deflecting. Listen-fors: you take responsibility (no blaming the team or 'bad luck'), the lesson is specific and behavioral, and you applied it later. The fatal mistakes are a fake failure (reads as evasive) and a failure with no lesson (reads as careless). Land it on the durable change in how you work — that turnaround is what they actually remember."
+  },
+  {
+    "slug": "iq-jh-why-this-company",
+    "kind": "behavioral",
+    "difficulty": "easy",
+    "prompt": "Why do you want to work here, specifically?",
+    "companies": "Behavioral / all big-tech (universal motivation question)",
+    "source_name": "Tech Interview Handbook — Behavioral interviews",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview/",
+    "model_answer": "Specificity is everything; generic enthusiasm or prestige/salary answers fall flat. Connect something *concrete* about them — the product, the scale they operate at, a technical trade-off their domain forces, how their teams are structured — to your own work and goals. For a distributed-systems candidate: 'You run a multi-region consistency problem at scale; I built a Raft KV store to understand exactly those trade-offs, and I want to work on them for real.' Do real homework: read engineering blogs, recent talks, the job description's language, and the company's values (many big-tech behavioral rubrics score against stated values). Interviewers listen for: genuine, researched intent that fits your trajectory — not a recitation of the homepage. Listen-fors: a clear thread from your past/interests to their actual problems. It needn't sound polished; a grounded, slightly rough reason beats a slick generic one. Have one specific hook ready before you walk in."
+  },
+  {
+    "slug": "iq-jh-biggest-project",
+    "kind": "behavioral",
+    "difficulty": "medium",
+    "prompt": "Tell me about the most challenging or significant project you've worked on.",
+    "companies": "Behavioral / all big-tech (universal STAR question)",
+    "source_name": "Tech Interview Handbook — 30 most common behavioral questions",
+    "source_url": "https://www.techinterviewhandbook.org/behavioral-interview-questions/",
+    "model_answer": "This is your home-field advantage — usually your Raft/KV build. STAR, but lead with *why it was hard* and *your* role: **Situation/Task** frames the technical challenge (agreement under crashes and partitions) and what you set out to do. **Action** is the meat — the key design decisions and trade-offs *you* made, plus one deep moment (a bug, a hard correctness call). **Result:** what works, tested, with honest scope. Interviewers use this to gauge technical depth, ownership, and communication all at once, and they *will* drill in — so know one layer cold. Listen-fors: clear personal contribution (say 'I,' not just 'we' for a solo project), appropriate altitude, and trade-off reasoning. Rehearse it until it's smooth but not robotic. Avoid going so broad you can't survive a follow-up; pick the project where you can go deepest, because the value is in withstanding the drill-down, not the headline."
+  },
+  {
+    "slug": "iq-jh-negotiation-basics",
+    "kind": "behavioral",
+    "difficulty": "medium",
+    "prompt": "You get an offer below your target. How do you approach negotiating it?",
+    "companies": "Behavioral / all big-tech (offer negotiation)",
+    "source_name": "Levels.fyi — Ultimate Negotiation Guide",
+    "source_url": "https://www.levels.fyi/blog/ultimate-negotiation-guide.html",
+    "model_answer": "Negotiation is a dialogue, and nothing has to be decided on the first call — never accept on the spot. Anchor on *data*: research real numbers by company, level, and location (levels.fyi) so you negotiate from knowledge, not hope, and understand the full structure (base, bonus, equity), not just base. Be collaborative and specific: express genuine enthusiasm, then ask whether there's flexibility, ideally with leverage ('I'm wrapping up other processes') stated honestly and non-specifically. Negotiate total comp, and know which levers a company can actually move (sign-on and equity are often more flexible than base). What's being assessed here is professionalism and preparation, not aggression. Listen-fors: you do your homework, stay positive and relationship-preserving, and don't bluff with offers you don't have. Get the final offer in writing. The biggest mistake is accepting immediately out of relief — a polite, data-backed ask rarely loses an offer and frequently improves it."
+  }
+]

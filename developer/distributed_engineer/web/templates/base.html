@@ -1,0 +1,39 @@
+{{define "base.html"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consensus — Path to Distributed Engineer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<div class="bar"><div class="bar-in">
+  <a class="brand" href="/today" style="text-decoration:none;color:inherit">
+    <svg class="logo" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="6" r="3.2" fill="var(--teal)"/>
+      <circle cx="6" cy="23" r="3.2" fill="var(--violet)"/>
+      <circle cx="26" cy="23" r="3.2" fill="var(--amber)"/>
+      <path d="M16 9 L7 21 M16 9 L25 21 M9 23 L23 23" stroke="var(--line)" stroke-width="1.4"/>
+    </svg>
+    <div><b>Consensus</b><div class="sub">path · distributed engineer</div></div>
+  </a>
+  <nav>
+    <a class="tab {{if eq .Active "today"}}on{{end}}" href="/today">Today</a>
+    <a class="tab {{if eq .Active "roadmap"}}on{{end}}" href="/roadmap">Roadmap</a>
+    <a class="tab {{if eq .Active "resources"}}on{{end}}" href="/resources">Resources</a>
+    <a class="tab {{if eq .Active "quiz"}}on{{end}}" href="/quiz">Quiz</a>
+    <a class="tab {{if eq .Active "checker"}}on{{end}}" href="/checker">Checker</a>
+  </nav>
+</div></div>
+
+<main>
+{{block "content" .}}{{end}}
+</main>
+
+<div class="save-flash" id="flash">saved</div>
+<script src="/static/js/app.js"></script>
+</body>
+</html>{{end}}

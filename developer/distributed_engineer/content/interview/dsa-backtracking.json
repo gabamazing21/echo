@@ -1,0 +1,62 @@
+[
+  {
+    "slug": "iq-bt-subsets",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Subsets: return all 2^n subsets of a set of distinct integers.",
+    "companies": "Amazon, Meta, Google",
+    "source_name": "NeetCode 150 / LeetCode #78",
+    "source_url": "https://leetcode.com/problems/subsets/",
+    "model_answer": "Backtracking over include/exclude at each index: at index i, recurse with the element added, then recurse without it. Record a **copy** of the current list at the leaves (or at every node). O(n·2ⁿ). The cleanest first backtracking problem — it makes the choose/un-choose template obvious. Follow-up Subsets II (duplicates) = sort, then skip equal siblings at the same tree depth."
+  },
+  {
+    "slug": "iq-bt-permutations",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Permutations: all orderings of a list of distinct integers.",
+    "companies": "Amazon, Meta, Microsoft",
+    "source_name": "NeetCode 150 / LeetCode #46",
+    "source_url": "https://leetcode.com/problems/permutations/",
+    "model_answer": "Backtrack with a `used []bool`: for each position try every unused number, mark it used, recurse, then unmark (the backtrack). n! leaves. The mark/unmark around the recursive call is the choose/un-choose. Permutations II (with duplicates) adds: sort, and skip a value if it equals the previous one that wasn't used at this level."
+  },
+  {
+    "slug": "iq-bt-combination-sum",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Combination Sum: all combinations of candidates (reusable) that sum to a target.",
+    "companies": "Amazon, Google, Uber",
+    "source_name": "NeetCode 150 / LeetCode #39",
+    "source_url": "https://leetcode.com/problems/combination-sum/",
+    "model_answer": "Backtrack choosing candidates from a start index (allowing reuse by recursing with the same index). **Prune** when the running sum exceeds the target — sorting first lets you `break` early, a big speedup. Pass `start` to avoid permutations of the same combination. Good problem to demonstrate pruning, which is the difference between passing and TLE."
+  },
+  {
+    "slug": "iq-bt-generate-parens",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Generate Parentheses: all valid combinations of n pairs of parentheses.",
+    "companies": "Amazon, Meta, Google",
+    "source_name": "NeetCode 150 / LeetCode #22",
+    "source_url": "https://leetcode.com/problems/generate-parentheses/",
+    "model_answer": "Backtrack tracking counts of open and close used. Prune with the rules: add '(' only while open < n; add ')' only while close < open (otherwise it'd be invalid). Record when length == 2n. The pruning *is* the insight — naively generating all 2^(2n) strings and filtering is wasteful; the constraints keep you on valid prefixes only."
+  },
+  {
+    "slug": "iq-bt-word-search",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Word Search: does a word exist in a grid via 4-directional adjacent cells (no reuse)?",
+    "companies": "Amazon, Meta, Microsoft, Bloomberg",
+    "source_name": "NeetCode 150 / LeetCode #79",
+    "source_url": "https://leetcode.com/problems/word-search/",
+    "model_answer": "Backtracking over the grid: from each cell matching word[0], DFS to neighbors matching the next char, marking the cell visited (e.g. temporarily overwrite it) and **un-marking on return**. Prune as soon as a char doesn't match. Combines grid-DFS (graphs lesson) with backtracking's un-choose. Watch bounds and restoring the cell so other paths can reuse it."
+  },
+  {
+    "slug": "iq-bt-nqueens",
+    "kind": "coding",
+    "difficulty": "hard",
+    "prompt": "N-Queens: place N queens on an N×N board so none attack each other; return the count or all boards.",
+    "companies": "Google, Amazon",
+    "source_name": "NeetCode 150 / LeetCode #51",
+    "source_url": "https://leetcode.com/problems/n-queens/",
+    "model_answer": "Place one queen per row, backtracking over columns. Track attacked **columns** and both **diagonals** (encode as `row-col` and `row+col`) in sets so validity is O(1); skip attacked positions (pruning). Place → recurse to next row → remove. The showcase pruning problem: without the diagonal/column sets it's hopeless; with them it's elegant. Be ready to explain the diagonal encoding."
+  }
+]

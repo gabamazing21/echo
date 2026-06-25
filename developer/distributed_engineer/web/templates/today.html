@@ -1,0 +1,63 @@
+{{define "content"}}
+<div class="eyebrow">{{.Plan.Date.Format "Monday · 02 January 2006"}}</div>
+<h1 class="page">Today</h1>
+<p class="lead">Your guided block for the next ~{{.Plan.TargetHrs}} hours, picked up exactly where you left off. Work it top to bottom. Commit each task as you finish — that's what keeps your streak alive.</p>
+
+<div class="panel today-hero">
+  <div class="flame">🔥</div>
+  <div class="ht">
+    <div class="big">{{.Plan.Streak}}-day streak{{if .Plan.StudiedToday}} · today logged ✓{{end}}</div>
+    <div class="sub">
+      {{if .Plan.CurrentStep}}Currently on <b>Step {{.Plan.CurrentStep.ID}} — {{.Plan.CurrentStep.Phase}}</b>{{else}}All steps complete. Consensus reached. 🟢{{end}}
+    </div>
+  </div>
+  <div class="planmeta"><b>{{.Plan.PlannedHrs}}h</b>planned today</div>
+</div>
+
+<div class="panel">
+  <h3 class="steps-head">Do this today</h3>
+  {{range .Plan.Items}}
+  <div class="day-task">
+    <button class="commit {{if .Done}}done{{end}}" data-task="{{.ID}}" aria-label="Commit task">{{if .Done}}✓{{end}}</button>
+    <div class="dt-main">
+      <div class="dt-title {{if .Done}}done{{end}}">{{.Title}}</div>
+      <div class="dt-meta">
+        <span class="tag t-{{.Kind}}">{{.Kind}}</span>
+        <span class="task-concept" style="margin:0">▸ {{.Concept}} · {{.Hrs}}h</span>
+        {{if .HasLesson}}<a class="lesson-link" href="/lesson/{{.LessonSlug}}">Open lesson →</a>{{end}}
+      </div>
+    </div>
+    <div class="due {{dueClass .Deadline}}">{{dueText .Deadline}}</div>
+  </div>
+  {{else}}
+  <div class="day-task"><div class="dt-main"><div class="dt-title">Nothing queued — every task is committed. 🟢</div></div></div>
+  {{end}}
+</div>
+
+<!-- mission control -->
+<h1 class="page" style="font-size:22px;margin-top:34px">Mission control</h1>
+<div class="grid dash">
+  <div class="panel ring-wrap">
+    <svg viewBox="0 0 320 320">
+      <defs><filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+      {{ring .Dash.Steps}}
+      <g class="ring-center" text-anchor="middle">
+        <text class="pct" x="160" y="158">{{.Dash.OverallPct}}%</text>
+        <text class="lbl" x="160" y="180">NODES ONLINE</text>
+      </g>
+    </svg>
+    <div class="ring-cap">{{.Dash.TasksDone}} of {{.Dash.TasksTotal}} tasks committed</div>
+  </div>
+  <div class="stat-col">
+    <div class="panel stat"><div class="ico">🔥</div><div><div class="big">{{.Dash.Streak}}</div><div class="cap">Uptime streak</div></div></div>
+    <div class="panel stat"><div class="ico">⚡</div><div><div class="big">{{.Dash.HoursDone}} / {{.Dash.HoursTotal}}</div><div class="cap">Hours logged</div></div></div>
+    <div class="panel stat"><div class="ico">🟢</div><div><div class="big">{{.Dash.StepsOnline}} / {{.Dash.StepsTotal}}</div><div class="cap">Steps online</div></div></div>
+    <div class="panel stat"><div class="ico">🎯</div><div><div class="big">{{if lt .Dash.DaysToFinish 0}}{{.Dash.DaysToFinish}}d{{else}}{{.Dash.DaysToFinish}}d{{end}}</div><div class="cap">To target finish</div></div></div>
+  </div>
+</div>
+
+<div class="foot">
+  Built for the long game · progress saves automatically
+  <br><button class="reset" id="reset">Reset all progress</button>
+</div>
+{{end}}

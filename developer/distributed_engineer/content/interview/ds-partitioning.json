@@ -1,0 +1,57 @@
+[
+  {
+    "slug": "iq-hot-key-celebrity",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Your social app hashes user IDs to partitions, so load is even across the cluster. Then one celebrity with 50M followers starts posting and a single partition melts. Why didn't hashing help, and how do you fix it?",
+    "companies": "System design interviews",
+    "source_name": "System Design Primer — Sharding",
+    "source_url": "https://github.com/donnemartin/system-design-primer#sharding",
+    "model_answer": "Hashing spreads *distinct keys* evenly, but a celebrity is **one key**. Every request for that key hashes to the same partition, so a good hash function does nothing for a single hot key — you have a hot *key*, not just a hot *partition*. The fix is application-level, not in the hash:\n\n- **Key splitting / suffixing**: append a random suffix (`celeb_id#0..N`) so the one key becomes N sub-keys on N partitions; reads must scatter/gather across the suffixes and recombine. Trades read complexity for spread.\n- **Dedicated partitions**: detect hot keys and pin them to their own isolated nodes so they don't starve neighbors.\n- **Caching / read replicas / fan-out-on-read**: serve the celebrity's hot reads from a cache or many replicas instead of the primary.\n\nKey insight: data partitioning addresses *aggregate* skew; a single hot key needs explicit splitting plus caching, and you usually special-case detected hot keys rather than splitting everything.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-consistent-hashing-vnodes",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Explain consistent hashing on a ring. Roughly what fraction of keys move when you add the Nth node, and why does plain consistent hashing (one point per node) give uneven load? How do virtual nodes fix the variance?",
+    "companies": "Amazon (Dynamo)",
+    "source_name": "Amazon Dynamo paper (SOSP 2007)",
+    "source_url": "https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf",
+    "model_answer": "Map both keys and nodes onto a hash ring; a key belongs to the first node found clockwise. Adding a node only steals the arc between it and its predecessor, so it captures roughly its fair share — about **1/N of all keys move** when going from N−1 to N nodes (vs. nearly *all* keys with `hash % N`). That minimal-movement property is the whole point.\n\nThe problem: with **one point per node**, arc lengths are random, so some nodes own much larger arcs than others — high **load variance** (a node can own 2–3× the average). Removing a node also dumps its entire load onto a single successor.\n\n**Virtual nodes** fix this: each physical node is placed at many points (e.g. 100–200) on the ring. By the law of large numbers, the *sum* of many random arcs converges to the average, so per-node load variance shrinks (≈ 1/√V). Vnodes also let you weight powerful machines (more vnodes) and spread a departing node's keys across many successors. Dynamo uses exactly this.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-secondary-index-scatter-gather",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Data is partitioned by primary key (user_id). You need to query by a secondary attribute, e.g. 'all cars with color=red'. Compare local (document-partitioned) vs global (term-partitioned) secondary indexes and their read/write costs.",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "DDIA Ch.6 — Partitioning",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "Two designs, opposite trade-offs:\n\n**Local / document-partitioned index**: each partition indexes only *its own* documents. A write touches one partition (cheap, no cross-partition coordination). But a read by secondary key must query **every** partition and merge — a **scatter/gather**, since matching rows live everywhere. Read latency is bounded by the slowest partition; cost grows with partition count.\n\n**Global / term-partitioned index**: the index itself is partitioned by the *term* (e.g. all `color=red` entries on one partition, regardless of which node holds the document). A read hits just the partition owning that term — fast, no scatter. But a write to one document may update index entries on *several* partitions (one per indexed field's value), making writes **cross-partition** — slower and ideally requiring a distributed transaction to stay consistent; in practice many systems update global indexes **asynchronously**.\n\nRule of thumb: **local = cheap writes, expensive scatter/gather reads; global = fast reads, expensive distributed writes.** The read/write ratio decides.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-fixed-partition-count",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "You're designing a sharded store and choose the 'fixed number of partitions' rebalancing strategy (e.g. 1000 partitions over 10 nodes). Why must you pick the partition count carefully up front, and what goes wrong if you pick too few or too many?",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "DDIA Ch.6 — Partitioning",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "With a fixed partition count, you create *many more* partitions than nodes and keep that number **constant** for the cluster's life. Adding a node just reassigns whole partitions to it — only the moved partitions' data transfers, and the key-to-partition mapping never changes. That stability is the appeal, but it means the count is effectively **permanent**: changing it later requires re-splitting every partition and rehashing data, the expensive reshuffle you adopted this scheme to avoid.\n\n- **Too few**: partitions can't be spread finely as you scale; you can't grow past `partition_count` nodes, and each partition becomes large, so rebalancing moves big chunks and you lose granularity for hot-spot relief.\n- **Too many**: each partition carries fixed overhead (metadata, open files, routing entries, replication management); millions of tiny partitions waste memory and slow management.\n\nSo size for your *maximum projected* scale with headroom — high enough to spread over future nodes, low enough to keep per-partition overhead sane. Systems like Cassandra and Riak sidestep this with dynamic/consistent-hashing splitting instead.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-range-vs-hash-compound",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "You're partitioning a time-series / chat-message store keyed by (sensor_id, timestamp). You want range scans within one sensor but no hot 'now' partition. How does a compound key partitioning scheme give you both, and where does it still fail?",
+    "companies": "System design interviews",
+    "source_name": "DDIA Ch.6 — Partitioning",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "Pure range partitioning on timestamp creates a moving hot spot: all *recent* writes hit the latest partition. Pure hashing kills that but destroys range scans. A **compound key** splits the difference: **hash (or fix-partition) the first component, range the second**. Here, partition by `sensor_id`, then keep messages ordered by `timestamp` *within* each sensor's partition.\n\n- Writes for different sensors scatter across partitions, so there's no single global 'now' hot partition.\n- A query like `sensor=X AND time BETWEEN a AND b` hits one partition and does an efficient range scan there.\n\nWhere it still fails:\n\n- You **must** specify the first component to scan — `all messages across all sensors in a time range` becomes a scatter/gather again.\n- It only spreads the *now* load if you have many active first-component values. **One very busy sensor (or chat room)** re-creates a hot key — back to the celebrity problem, fixable only with key splitting.\n\nThis is exactly the Cassandra/DynamoDB partition-key + sort-key model.",
+    "challenge_slug": ""
+  }
+]

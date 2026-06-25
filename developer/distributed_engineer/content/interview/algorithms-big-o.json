@@ -1,0 +1,54 @@
+[
+  {
+    "slug": "iq-bigo-theta-vs-o",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "What is the difference between Big-O, Big-Θ (Theta), and Big-Ω (Omega)? When someone says quicksort is 'O(n log n)' average, is that strictly correct?",
+    "companies": "Google, Meta, Bloomberg",
+    "source_name": "MIT 6.006 Introduction to Algorithms",
+    "source_url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/",
+    "model_answer": "**O** is an *upper* bound (grows no faster than), **Ω** a *lower* bound, **Θ** a *tight* bound (both at once). Saying `n` is `O(n²)` is true but loose; `Θ(n)` is the precise statement.\n\nThe gotcha: people sprawl 'O' onto best/avg/worst as if O *means* worst case. It doesn't — O is just an upper bound and you can give one for *any* case. 'Quicksort is O(n log n) average' is slightly sloppy; the tight statement is **Θ(n log n) on average, Θ(n²) worst case**. In an interview, state the *case* and the *bound* separately — that precision is exactly what senior interviewers listen for."
+  },
+  {
+    "slug": "iq-bigo-amortized-append",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Explain amortized O(1) using Go's slice append. Why isn't building an n-element slice with append O(n²), and how does that differ from average-case analysis?",
+    "companies": "Google, Amazon, Microsoft",
+    "source_name": "Go Blog — Arrays, slices: the mechanics of append",
+    "source_url": "https://go.dev/blog/slices",
+    "model_answer": "`append` is usually O(1) (write into spare capacity) but O(n) when it must grow: allocate a bigger backing array and copy. Because capacity **doubles**, the expensive copies are exponentially rare. Across n appends the total copy work is `1+2+4+...+n ≈ 2n`, so the cost *per* append averages to **amortized O(1)**.\n\nKey distinction interviewers probe: **amortized ≠ average-case**. Average case is about a probability distribution over inputs; amortized is a *guarantee over a sequence* of operations with no randomness assumed — any sequence of n appends costs O(n) total, period. Pre-sizing with `make([]T, 0, n)` removes the copies entirely but is an optimization, not a correctness fix."
+  },
+  {
+    "slug": "iq-bigo-space-time-tradeoff",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "Give a concrete example of trading space for time to drop an algorithm from O(n²) to O(n). State both the time AND space complexity of each version.",
+    "companies": "Amazon, Apple, Adobe",
+    "source_name": "NeetCode 150 / LeetCode #217 (Contains Duplicate)",
+    "source_url": "https://leetcode.com/problems/contains-duplicate/",
+    "model_answer": "Detecting duplicates: the all-pairs scan is **O(n²) time, O(1) space**. Remembering what you've seen in a set flips it:\n\n```go\nfunc hasDup(s []int) bool {\n    seen := make(map[int]struct{}, len(s)) // O(n) space\n    for _, v := range s {                  // O(n) time\n        if _, ok := seen[v]; ok { return true }\n        seen[v] = struct{}{}\n    }\n    return false\n}\n```\n\nNow **O(n) time, O(n) space**. The discipline interviewers reward: *always quote both axes*. The trade isn't free — 'remember everything' can blow a node's RAM at scale, which is why a sort-then-scan variant (O(n log n) time, O(1) extra space) is sometimes the right call instead.",
+    "challenge_slug": "contains-duplicate"
+  },
+  {
+    "slug": "iq-bigo-read-the-loops",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "A function loops i from 0..n, and inside loops j from i..n. Is it O(n²)? What about a loop that does `i *= 2` each step, or two sequential (not nested) loops over the same slice?",
+    "companies": "Meta, Google, Microsoft",
+    "source_name": "MIT 6.006 Introduction to Algorithms",
+    "source_url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/",
+    "model_answer": "The triangular nested loop runs `n + (n-1) + ... + 1 = n(n+1)/2` iterations — still **O(n²)** (drop the constant ½). Don't be fooled that `j` starts at `i`; halving the work doesn't change the class.\n\n`i *= 2` reaches `n` in `log₂ n` steps → **O(log n)**. Multiplicative steps are logarithmic; additive steps are linear.\n\nTwo *sequential* loops are `n + n = 2n` → **O(n)**, not O(n²). The rule: nesting *multiplies*, sequencing *adds*. The classic mistake is calling any two-loop function 'quadratic' — check whether the second loop is inside or after the first."
+  },
+  {
+    "slug": "iq-bigo-recursion-cost",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Naive recursive Fibonacci is O(2ⁿ). Walk through why, then explain how memoization changes both its time and space complexity.",
+    "companies": "Google, Meta, Amazon",
+    "source_name": "NeetCode 150 / LeetCode #509 (Fibonacci Number)",
+    "source_url": "https://leetcode.com/problems/fibonacci-number/",
+    "model_answer": "Each `fib(n)` spawns `fib(n-1)` and `fib(n-2)`, so the call tree roughly *doubles* per level → **O(2ⁿ) time**, **O(n) space** (max recursion depth). The waste is *recomputation*: `fib(3)` is recalculated exponentially many times.\n\nMemoize results in a map/array and each subproblem is solved once: **O(n) time, O(n) space**. Going bottom-up with two rolling variables drops it to **O(n) time, O(1) space**.\n\nThe transferable insight interviewers want: exponential blowup signals *overlapping subproblems*, and caching them is the gateway to dynamic programming (you'll see this again in Climbing Stairs).",
+    "challenge_slug": "climbing-stairs"
+  }
+]

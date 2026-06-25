@@ -1,0 +1,57 @@
+[
+  {
+    "slug": "iq-ptm-context-switch-cost",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Walk through exactly what happens during an OS context switch, and explain the two distinct costs it incurs.",
+    "companies": "Systems / infra interviews",
+    "source_name": "OSTEP — Scheduling / Mechanism: Limited Direct Execution",
+    "source_url": "https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-mechanisms.pdf",
+    "model_answer": "On a switch the kernel (1) saves the running thread's registers and program counter into its kernel stack / process control block, (2) picks the next runnable thread via the scheduler, and (3) restores that thread's saved register state and resumes it. There are **two** costs, and good answers name both:\n\n- **Direct cost** — the kernel cycles spent saving/restoring state and running the scheduler. Hundreds of nanoseconds to a few microseconds.\n- **Indirect cost** — the new thread's working set isn't in the CPU caches or TLB, so it runs slowly until those warm back up. This is often *larger* than the direct cost.\n\nA crossing into the kernel (trap) plus a possible address-space change (TLB flush on a process switch, not a thread switch) is why thousands of needless switches/sec is a real perf bug — and why Go multiplexes goroutines onto few OS threads.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-ptm-slice-stack-or-heap",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Does a Go slice live on the stack or the heap? Explain escape analysis and what determines where the backing array goes.",
+    "companies": "Common Go interviews",
+    "source_name": "Go FAQ — Stack or heap allocation",
+    "source_url": "https://go.dev/doc/faq#stack_or_heap",
+    "model_answer": "It depends — and saying \"it depends, decided by **escape analysis**\" is the point. A slice header (ptr, len, cap) is a small value; the *backing array* it points to is what may be allocated. The compiler proves at build time whether a value's lifetime can be confined to the function:\n\n- If the slice and its array don't outlive the function and don't escape, they can stay on the **stack** — free to reclaim on return.\n- If a reference **escapes** (returned, stored in a heap struct, captured by a goroutine, or grown to an unknown size via `append`), the array is moved to the **heap** so it stays valid, and the GC manages it.\n\n```go\nfunc local() int    { s := []int{1,2,3}; return s[0] } // can stay on stack\nfunc escapes() []int { return []int{1,2,3} }            // array escapes -> heap\n```\n\nInspect it with `go build -gcflags=-m`. Heap allocation means GC pressure, so this matters for hot paths.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-ptm-gc-stop-the-world",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Is Go's garbage collector \"stop-the-world\"? Describe how it works and where the pauses actually are.",
+    "companies": "Systems / infra interviews",
+    "source_name": "A Guide to the Go Garbage Collector",
+    "source_url": "https://go.dev/doc/gc-guide",
+    "model_answer": "Mostly **not**. Go uses a **concurrent, tri-color, mark-and-sweep** collector that does almost all of its work *while your program runs*. It is **not** fully stop-the-world (STW) like a naive collector — but it isn't zero-pause either. There are **two short STW pauses** per cycle:\n\n1. **Mark setup** — turn on the write barrier and prepare to mark.\n2. **Mark termination** — finish marking and turn the write barrier off.\n\nBetween them, marking runs concurrently (targeting ~25% of CPU), aided by a *write barrier* that catches pointer changes the mutator makes mid-mark; sweeping is also concurrent/lazy. The pauses are typically microseconds to low single-digit milliseconds. Interview signal: name the tri-color algorithm, the two brief STW points, the write barrier, and that you tune *frequency* with `GOGC` / `GOMEMLIMIT` — not the algorithm.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-ptm-goroutines-vs-os-threads",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Why can Go run a million goroutines but not a million OS threads? Explain how the runtime scheduler reduces OS context switches.",
+    "companies": "Common Go interviews",
+    "source_name": "Go — How goroutines work / Scheduler design",
+    "source_url": "https://go.dev/doc/effective_go#goroutines",
+    "model_answer": "An OS thread is expensive: a large fixed stack (often ~1 MB), kernel bookkeeping, and every blocking call or preemption is a **kernel** context switch. A goroutine starts with a tiny **~2 KB growable stack** and is scheduled in **user space** by the Go runtime.\n\nThe runtime uses **M:N scheduling** — M goroutines multiplexed onto N OS threads (N ≈ `GOMAXPROCS`), via the G-M-P model (Goroutine, Machine/OS-thread, Processor). The key win: when a goroutine blocks on a channel, mutex, or (often) network I/O, the runtime **parks it and runs another goroutine on the same OS thread** — *no kernel switch*. For blocking syscalls it can hand the P to a fresh thread so others keep running. So you get the \"thread-per-task\" programming model without paying a thread-per-task, and far fewer trips through the kernel scheduler.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-ptm-cache-memory-ordering",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Two goroutines on different cores share a variable. Why might one not see the other's write, even with no compiler bug? Explain caches and memory ordering.",
+    "companies": "Systems / infra interviews",
+    "source_name": "The Go Memory Model",
+    "source_url": "https://go.dev/ref/mem",
+    "model_answer": "Each core has its own **L1/L2 cache**; a write can sit in one core's cache or store buffer before it's visible to another, and CPUs (and compilers) **reorder** memory operations for speed. So without synchronization there's no guarantee the second goroutine ever observes the first's write, or sees writes in program order. This is *memory ordering*, governed by Go's **memory model**, which defines a **happens-before** relation: a read is only guaranteed to see a write if there's a happens-before edge between them.\n\nYou create those edges with synchronization — a `sync.Mutex`, a channel send/receive, `sync/atomic`, or `sync.Once` — which insert the memory barriers that flush/invalidate caches and forbid the relevant reordering.\n\n```go\nvar mu sync.Mutex; var x int\nmu.Lock(); x = 1; mu.Unlock()   // unlock happens-before next lock; the read then sees x==1\n```\n\nNever rely on a plain shared variable to communicate between goroutines — that's a data race, and `go test -race` will flag it.",
+    "challenge_slug": ""
+  }
+]

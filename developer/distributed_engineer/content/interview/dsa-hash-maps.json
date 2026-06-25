@@ -1,0 +1,66 @@
+[
+  {
+    "slug": "iq-hash-two-sum",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Two Sum: given an int slice and a target, return the indices of the two numbers that add to target.",
+    "companies": "Amazon, Google, Apple, Microsoft, Adobe",
+    "source_name": "NeetCode 150 / LeetCode #1",
+    "source_url": "https://leetcode.com/problems/two-sum/",
+    "model_answer": "Brute force is O(n²). The expected answer is **one pass with a hash map**: for each `x` at index `i`, check if `target-x` is already a key; if so return that stored index and `i`; otherwise store `x -> i`. **O(n) time, O(n) space.**\n\nSay the word *complement* out loud — that's the signal. Edge note: store as you go (not all up front) so you naturally avoid using the same element twice.",
+    "challenge_slug": "two-sum"
+  },
+  {
+    "slug": "iq-hash-contains-duplicate",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Contains Duplicate: return true if any value appears at least twice in the slice.",
+    "companies": "Amazon, Apple, Google",
+    "source_name": "NeetCode 150 / LeetCode #217",
+    "source_url": "https://leetcode.com/problems/contains-duplicate/",
+    "model_answer": "Use a set: `seen := map[int]struct{}{}`; for each value, return true if it's already present, else insert it. **O(n) time, O(n) space.**\n\nIdiomatic-Go signal interviewers listen for: `map[T]struct{}` (zero-byte values) for a set, not `map[T]bool`. The empty struct allocates no memory for values, so you pay only for keys. If asked for O(1) space, sort first (O(n log n)) and scan adjacent pairs.",
+    "challenge_slug": "contains-duplicate"
+  },
+  {
+    "slug": "iq-hash-valid-anagram",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Valid Anagram: given strings s and t, return whether t is an anagram of s.",
+    "companies": "Amazon, Bloomberg, Google",
+    "source_name": "NeetCode 150 / LeetCode #242",
+    "source_url": "https://leetcode.com/problems/valid-anagram/",
+    "model_answer": "Build a frequency map of s (`map[rune]int`), then decrement for each char of t; if any count goes negative or a key is missing, return false. Lengths must match first. **O(n) time, O(k) space** where k is the alphabet size.\n\nGotcha they probe: 'lowercase a–z only' lets you use a fixed `[26]int` array → **O(1) space**. But for full **Unicode**, iterate `[]rune`, not bytes — indexing a string gives bytes and will mis-count multi-byte runes. Sorting both strings also works but is O(n log n).",
+    "challenge_slug": "valid-anagram"
+  },
+  {
+    "slug": "iq-hash-top-k-frequent",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Top K Frequent Elements: return the k most frequent elements in an int slice.",
+    "companies": "Amazon, Meta, Google, Microsoft",
+    "source_name": "NeetCode 150 / LeetCode #347",
+    "source_url": "https://leetcode.com/problems/top-k-frequent-elements/",
+    "model_answer": "Count with a `map[int]int` first. Then two routes:\n1. **Min-heap of size k** (`container/heap`): push/pop to keep the k largest → **O(n log k)**. Best when k is small.\n2. **Bucket sort**: index buckets by frequency `0..n`, then scan high→low collecting until you have k → **O(n)**. Best when k is large.\n\nThe trade-off *is* the interview point — naming when each wins shows maturity. Avoid the naive 'sort all by frequency' (O(n log n)); it's beaten by both above.",
+    "challenge_slug": "top-k-frequent"
+  },
+  {
+    "slug": "iq-hash-flooding-dos",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "What is a hash-flooding (algorithmic-complexity) DoS attack, and how does Go's runtime defend its built-in map against it?",
+    "companies": "Cloudflare, Google",
+    "source_name": "Go runtime — map hashing / hashtriemap design",
+    "source_url": "https://go.dev/blog/maps",
+    "model_answer": "An attacker who knows your hash function can craft many keys that all hash to the **same bucket**, collapsing the chain into a linear list. Lookups degrade from O(1) to **O(n)**, and a flood of such keys (e.g. HTTP headers, JSON fields) burns CPU and stalls the service.\n\nGo defends by seeding the map hash with a **random value chosen at process startup**, so an attacker can't predict which keys collide. The takeaway: O(1) is an *expectation under a good, unpredictable hash*, not a guarantee — and randomized seeding is what makes the worst case unreachable in practice. (It's also why Go map iteration order is randomized.)"
+  },
+  {
+    "slug": "iq-hash-chaining-vs-open-addressing",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Compare separate chaining and open addressing for collision resolution. What is the load factor, and why does each strategy behave differently as it rises?",
+    "companies": "Google, Meta, Bloomberg",
+    "source_name": "NeetCode roadmap — Arrays & Hashing",
+    "source_url": "https://neetcode.io/roadmap",
+    "model_answer": "**Chaining**: each bucket holds a list; collisions append. Simple, degrades *gracefully* under high load (chains just lengthen), but pointers hurt cache locality. **Open addressing**: all entries live in one flat array; collisions *probe* for the next slot. Cache-friendly, no per-entry pointers, but degrades *badly* near-full as probe sequences explode — and deletes need tombstones.\n\n**Load factor = entries / buckets** — the dial that governs performance. Both resize (typically double + rehash) when it crosses a threshold (~0.75 for chaining; open addressing must stay lower). Resize is O(n) but amortizes to O(1) per insert. Go's map uses chaining, but with 8 slots packed per bucket for locality — a hybrid."
+  }
+]

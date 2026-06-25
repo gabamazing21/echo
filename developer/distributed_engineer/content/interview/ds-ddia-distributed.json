@@ -1,0 +1,57 @@
+[
+  {
+    "slug": "iq-design-safe-distributed-lock",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Design a distributed lock that protects writes to a shared resource (say, a file in object storage) and stays correct even when a lock holder suffers a multi-second GC or VM-migration pause. Walk through what goes wrong with a lease/TTL alone, and exactly what the resource must enforce.",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "Martin Kleppmann — How to do distributed locking",
+    "source_url": "https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html",
+    "model_answer": "A lease alone is unsafe. Client A acquires the lock, then a stop-the-world GC pause freezes it past the lease expiry. The lock service hands the lease to client B. A wakes up — a *zombie leader* — still believing it holds the lock, and writes. Now both A and B write: corruption. Bumping the TTL doesn't help, because a pause can strike at the worst moment, including just before the write.\n\nThe fix is **fencing tokens**. Each grant returns a monotonically increasing number (1, 2, 3…). The client attaches its token to every write. The *resource* records the highest token it has seen and **rejects any write whose token is lower** than that. So when A (token 33) wakes after B (token 34) has written, A's stale write is refused. Correctness no longer depends on timing assumptions — the resource itself enforces order. The lock service supplies the token (ZooKeeper's zxid or a version counter works); the storage side must check it, or the lock is decorative.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-fencing-tokens-zombie-leader",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "What is a 'zombie leader', and why does adding a fencing token make a system safe against one when a longer lock lease does not?",
+    "companies": "Backend / distributed interviews",
+    "source_name": "DDIA Ch.8 — The Trouble with Distributed Systems",
+    "source_url": "https://dataintensive.net/",
+    "model_answer": "A zombie leader is a node that still *believes* it is the leader (or lock holder) after it has actually lost that status. The classic cause is a process pause: a GC pause or VM migration freezes the node for seconds. While it's frozen, its lease expires and the cluster elects/grants a new leader. When the zombie wakes, it has no idea time passed and proceeds to act on stale authority.\n\nA longer lease can't fix this: the pause can be arbitrarily long, and it can land *after* the node checks 'am I still leader?' but *before* it issues the write — so any time-based check has a race.\n\nA **fencing token** removes the reliance on timing. Each leadership/lock grant carries a strictly increasing number. Every protected operation includes the token, and the downstream resource remembers the highest token seen and rejects anything lower. The zombie's old, smaller token is refused. Safety becomes a property the resource *enforces*, not a property the leader *assumes*.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-2pc-vs-saga",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Contrast two-phase commit (2PC) with the Saga pattern for a transaction spanning several microservices. Cover atomicity, blocking, the coordinator, isolation, and what each one gives up.",
+    "companies": "Backend / distributed interviews",
+    "source_name": "microservices.io — Saga pattern",
+    "source_url": "https://microservices.io/patterns/data/saga.html",
+    "model_answer": "**2PC** gives true atomic commit. A coordinator runs a *prepare* phase (every participant votes and durably promises it can commit), then a *commit* phase. All commit or all abort, with ACID isolation. The cost: the **coordinator is a single point of failure**, and it's a **blocking** protocol — if the coordinator dies after participants have voted 'yes', they sit holding locks, unable to commit or abort until it recovers. That's why 2PC scales poorly and is often avoided.\n\n**Saga** drops global atomicity for availability. The transaction is a sequence of *local* transactions, each committing independently and publishing an event that triggers the next. On failure, you run **compensating transactions** that semantically undo prior steps (refund, restock). There's no coordinator-induced blocking and no held global locks — but also **no isolation**: other transactions can observe uncommitted intermediate state (dirty reads, lost updates), so you must design countermeasures (semantic locks, commutative updates). 2PC = consistency, blocking; Saga = availability, eventual consistency, manual rollback.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-design-exactly-once-payment",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "A payment service consumes 'charge customer' messages from a queue that guarantees at-least-once delivery. Design it so a customer is never double-charged, even when messages are redelivered. Is 'exactly-once' real here?",
+    "companies": "Backend / distributed interviews",
+    "source_name": "System Design Primer — Consistency patterns",
+    "source_url": "https://github.com/donnemartin/system-design-primer#consistency-patterns",
+    "model_answer": "'Exactly-once *delivery*' is essentially a myth across an unreliable network — the consumer can crash after acting but before acking, so the broker must redeliver. What you actually build is **at-least-once delivery + idempotent processing**, which yields *effectively-once* results.\n\nDesign: the producer stamps each charge with a stable **idempotency key** (e.g. order_id, not a fresh UUID per send). The payment service keeps a `processed_charges` table keyed by that idempotency key. Processing a message is a single local transaction: `INSERT` the key (unique constraint) **and** record the charge, atomically. If the key already exists, the insert fails — you skip the charge and just ack. So a redelivered message is recognized and deduplicated.\n\nKey details: dedup store and side effect must commit atomically (same DB), or you re-derive idempotency at the downstream payment gateway (most accept an idempotency key directly). Retries are safe, redelivery is safe, and the customer is charged once — without ever needing a magical exactly-once channel.",
+    "challenge_slug": ""
+  },
+  {
+    "slug": "iq-zookeeper-etcd-use-cases",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Your service needs automatic leader election and a small amount of dynamic config shared across the fleet. Would you reach for ZooKeeper/etcd or just put it in your existing Postgres? Justify the choice and list what ZK/etcd are (and aren't) for.",
+    "companies": "Distributed systems / infra interviews",
+    "source_name": "System Design Primer — Service discovery",
+    "source_url": "https://github.com/donnemartin/system-design-primer#service-discovery",
+    "model_answer": "Reach for **ZooKeeper/etcd**. They are linearizable, consensus-backed (ZAB / Raft) coordination services purpose-built for exactly this: **leader election, distributed locks, dynamic config, service discovery, and membership**. They give you the primitives that make election correct — **ephemeral nodes/leases** (a key vanishes when the holder's session dies, so failure is detected automatically), **watches** (followers are notified instantly of leadership change), and **monotonic version numbers** (zxid / mod_revision) that double as **fencing tokens** to defend against zombie leaders.\n\nRolling your own election on Postgres means reinventing leases, liveness detection, and fencing — easy to get subtly wrong (split brain). A plain row has no watch/ephemeral semantics.\n\nThe crucial caveat: ZK/etcd **don't store your application data**. They hold *small, critical metadata* — kilobytes of config, locks, membership — and keep it strongly consistent by replicating to a majority quorum. Bulk or high-throughput data still belongs in your database; ZK/etcd are the coordination brain, not the warehouse.",
+    "challenge_slug": ""
+  }
+]

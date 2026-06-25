@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "iq-echo-timeout-middleware",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Write middleware that cancels any handler running longer than a deadline and returns 503. What must the handler do for the cancel to actually stop the work?",
+    "companies": "Backend / API interviews",
+    "source_name": "Go blog — Context",
+    "source_url": "https://go.dev/blog/context",
+    "model_answer": "Wrap the request context with `context.WithTimeout`, swap it onto the request, and `defer cancel()`:\n\n```go\nctx, cancel := context.WithTimeout(c.Request().Context(), 5*time.Second)\ndefer cancel()\nc.SetRequest(c.Request().WithContext(ctx))\n```\n\nThe cancel only *stops work* if the handler propagates `ctx` into its DB/HTTP calls and selects on `ctx.Done()` — a CPU loop that ignores ctx keeps running. So timeouts are cooperative. Return `503`/`504` when `ctx.Err() == context.DeadlineExceeded`. Echo also ships `middleware.TimeoutWithConfig`."
+  },
+  {
+    "slug": "iq-echo-panic-isolation",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "If one handler panics, why doesn't it crash the whole server, and what makes that work?",
+    "companies": "Go / backend interviews",
+    "source_name": "Echo docs — Recover middleware",
+    "source_url": "https://echo.labstack.com/docs/middleware/recover",
+    "model_answer": "Each request runs in its own goroutine. Recover middleware wraps the chain in a `defer func(){ recover() }()` so a panic unwinds only that goroutine, is converted to a 500, and the server keeps serving other requests. Without recover, an unhandled panic in any goroutine crashes the *process*. Caveat interviewers probe: a panic in a goroutine *you* spawned inside a handler is NOT caught by the request's recover — you must recover in that goroutine too."
+  },
+  {
+    "slug": "iq-echo-metrics-middleware",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Add middleware that records latency and status-code counts for every route without changing any handler. How do you capture the status code?",
+    "companies": "Observability / backend interviews",
+    "source_name": "Go net/http — ResponseWriter wrapping",
+    "source_url": "https://pkg.go.dev/net/http#ResponseWriter",
+    "model_answer": "Cross-cutting concerns belong in middleware. Time the `next(c)` call; on the way out read `c.Response().Status` and `c.Response().Size` (Echo records them on its response wrapper). In raw net/http you'd wrap `ResponseWriter` with a type that intercepts `WriteHeader` to remember the code (the writer doesn't expose it). Emit to Prometheus/StatsD keyed by method+route+status. The point: handlers stay oblivious; observability is one layer."
+  },
+  {
+    "slug": "iq-echo-context-propagation",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Why must you pass `c.Request().Context()` into your store/DB calls, and what leaks if you don't?",
+    "companies": "Go / backend interviews",
+    "source_name": "Go blog — Context",
+    "source_url": "https://go.dev/blog/context",
+    "model_answer": "The request context is cancelled when the client disconnects or the deadline fires. If you thread it into DB/RPC calls, those abandon their work and release the pooled connection. If you pass `context.Background()` instead, a cancelled request's queries keep running — under load that piles up goroutines and holds DB connections hostage, cascading into exhaustion. Rule: ctx is the first arg of anything doing I/O, all the way down."
+  }
+]

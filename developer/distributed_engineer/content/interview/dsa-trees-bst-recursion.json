@@ -1,0 +1,54 @@
+[
+  {
+    "slug": "iq-trees-inorder-traversal",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Return the in-order traversal of a binary tree's values. Give the recursive version, then the iterative one with an explicit stack.",
+    "companies": "Microsoft, Amazon, Bloomberg",
+    "source_name": "NeetCode 150 / LeetCode #94",
+    "source_url": "https://leetcode.com/problems/binary-tree-inorder-traversal/",
+    "model_answer": "Recursive: visit left, append node, visit right. **O(n) time, O(h) space** (call stack, h = height).\n\nIterative: keep an explicit stack; push left children until nil, pop and visit, then move right. This is what interviewers really want — it proves you understand that recursion *is* a stack, and it dodges stack-overflow on a skewed/deep tree.\n\nFor a BST, in-order output is **sorted** — that property is the trigger for problems like 'kth smallest' or 'validate BST'. Mention it. (Morris traversal gives O(1) space via threaded links if they push for it.)",
+    "challenge_slug": "binary-tree-inorder"
+  },
+  {
+    "slug": "iq-trees-validate-bst",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Validate whether a binary tree is a valid BST. Why is 'left.val < node.val < right.val' checked only against direct children wrong?",
+    "companies": "Amazon, Meta, Google, Microsoft",
+    "source_name": "NeetCode 150 / LeetCode #98",
+    "source_url": "https://leetcode.com/problems/validate-binary-search-tree/",
+    "model_answer": "The classic trap: checking each node only against its *immediate* children passes invalid trees. The invariant is about **whole subtrees** — every value in the left subtree must be less than the node, not just the child.\n\nTwo correct approaches:\n1. **Bounds**: recurse carrying `(min, max)`; each node must fall strictly inside, tightening the bound as you descend. **O(n) time, O(h) space.**\n2. **In-order traversal must be strictly increasing** — track the previous value and fail if the current isn't greater.\n\nWatch the edges: use strict `<`/`>` (duplicates depend on the spec), and beware integer overflow if you initialize bounds with min/max int — using pointers or the in-order method sidesteps it.",
+    "challenge_slug": "valid-bst"
+  },
+  {
+    "slug": "iq-trees-bst-delete",
+    "kind": "coding",
+    "difficulty": "medium",
+    "prompt": "Implement delete for a BST. Walk through all three cases, especially deleting a node with two children.",
+    "companies": "Amazon, Microsoft, Google",
+    "source_name": "NeetCode 150 / LeetCode #450 (Delete Node in a BST)",
+    "source_url": "https://leetcode.com/problems/delete-node-in-a-bst/",
+    "model_answer": "Three cases: **leaf** → detach (return nil to parent). **One child** → splice the parent to that child. **Two children** → you can't just remove it; replace its value with its **in-order successor** (smallest node in the right subtree), then recursively delete that successor — which by construction has at most one child.\n\nWhy the successor? It's the only value that preserves the ordering on *both* sides. Use the 'return the subtree root' recursion pattern so the parent re-links cleanly without special-casing. **O(h) time.** A symmetric answer using the in-order *predecessor* (max of the left subtree) is equally valid — say so."
+  },
+  {
+    "slug": "iq-trees-recursion-base-case",
+    "kind": "conceptual",
+    "difficulty": "easy",
+    "prompt": "What are the two required parts of any recursion, and what is the relationship between recursion depth and the call stack? When would you convert a recursive traversal to iterative?",
+    "companies": "Google, Amazon, Meta",
+    "source_name": "NeetCode roadmap — Recursion / Trees",
+    "source_url": "https://neetcode.io/roadmap",
+    "model_answer": "Every recursion needs a **base case** (stops, answers directly) and a **recursive case** (shrinks toward the base). Miss or never-reach the base case → infinite recursion → **stack overflow**.\n\nEach call adds a **stack frame**; max simultaneous frames = recursion depth = tree height `h`. So recursive tree code is **O(h) space**, which is O(log n) balanced but **O(n)** on a degenerate/skewed tree. Convert to an iterative explicit-stack version when depth can be large (deep or adversarial input) to avoid overflowing the real call stack — that risk awareness is what interviewers reward."
+  },
+  {
+    "slug": "iq-trees-balancing",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "How can a plain BST degrade to O(n) operations, and what category of tree fixes it? Where does balancing reappear in real systems?",
+    "companies": "Google, Amazon, Bloomberg",
+    "source_name": "NeetCode roadmap — Trees",
+    "source_url": "https://neetcode.io/roadmap",
+    "model_answer": "A BST's shape depends on **insertion order**. Insert sorted data and every node hangs to one side — the tree becomes a linked list of height `n`, so search/insert degrade to **O(n)**. O(log n) only holds when the tree is *balanced* (height ≈ log n).\n\nThe fix is a **self-balancing tree** that rotates on insert/delete to keep height near log n: **AVL** and **red-black trees** in memory (Go's `sort` and many language maps lean on such ideas). On disk, databases use the **B-tree / B+tree** — a balanced, high-fan-out tree that minimizes page reads. The one-liner: *a tree is only as fast as it is balanced.*"
+  }
+]

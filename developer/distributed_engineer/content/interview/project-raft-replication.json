@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "iq-raftrep-figure8",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Raft says a leader may only directly commit an entry from its current term, never an older one, even if that older entry is replicated on a majority. Explain the Figure 8 scenario this prevents.",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "In Search of an Understandable Consensus Algorithm (Raft paper), §5.4.2 / Figure 8",
+    "source_url": "https://raft.github.io/raft.pdf",
+    "model_answer": "Figure 8 shows that an entry replicated on a majority is **not necessarily safe to commit** if it's from a prior term. Sketch: leader S1 (term 2) writes entry at index 2, replicates it to a minority, then crashes. S5 wins term 3 (it didn't need that entry to win) and writes a different entry at index 2. Now S1 comes back, wins term 4, and re-replicates its *old* term-2 entry to a **majority**. If S1 may commit it just because a majority now hold it, it commits — and is then applied. But S5 can still win a later election and overwrite index 2, because the conflicting entries don't block its candidacy. A committed, applied entry would be overwritten: catastrophic.\n\nThe fix is the `log[N].Term == currentTerm` guard: the leader only *directly* commits a current-term entry. Older entries commit **indirectly** — once a current-term entry above them is committed by majority, the Log Matching property makes everything beneath it safe too. The classic lab bug is computing the majority `N` but skipping the term check; it passes simple tests and fails the adversarial ones intermittently."
+  },
+  {
+    "slug": "iq-raftrep-apply-vs-commit",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Distinguish 'committed' from 'applied' in Raft. Why must applying happen in a single goroutine, strictly in index order?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "Students' Guide to Raft (Jon Gjengset, 6.824 TA)",
+    "source_url": "https://thesquareplanet.com/blog/students-guide-to-raft/",
+    "model_answer": "**Committed** means an entry is durably agreed: a majority have it and the leader has advanced `commitIndex` past it — it will never be lost or reordered. **Applied** means the entry has been handed to the state machine (`lastApplied` advanced and an `ApplyMsg` sent on `applyCh`) so its effect is now visible. Commit is consensus's job; apply is the boundary to the application above Raft.\n\nApplying must be one goroutine sending strictly `lastApplied+1, +2, …` because the **state machine's correctness depends on every replica applying the same commands in the same order** — that's the entire guarantee Raft sells. If the AppendEntries handler applied entries while the leader-side path also applied, or two goroutines raced on `applyCh`, entries could arrive out of order or be applied twice, and replicas would diverge — different values at the same key on different nodes. Centralizing apply in one ordered loop is the only way to preserve that determinism. And you must never send on `applyCh` while holding the lock — the receiver can block, deadlocking the loop."
+  },
+  {
+    "slug": "iq-raftrep-persist-before-reply",
+    "kind": "conceptual",
+    "difficulty": "hard",
+    "prompt": "Why must Raft persist currentTerm, votedFor, and the log to stable storage BEFORE replying to an RPC, not after? Give a failure trace.",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "In Search of an Understandable Consensus Algorithm (Raft paper), Figure 2",
+    "source_url": "https://raft.github.io/raft.pdf",
+    "model_answer": "Because a reply is a **promise**, and a crash between replying and persisting breaks it. Trace for `votedFor`: follower F grants its vote to candidate A in term 5, replies `VoteGranted=true`, then crashes *before* writing `votedFor` to disk. On restart F has no memory of voting, so when candidate B asks in term 5, F votes again. Now two candidates each have a majority for term 5 → **two leaders** → split brain.\n\nTrace for the log: follower accepts AppendEntries (replies success), the leader counts it toward the majority and commits, but the follower crashes before persisting those entries. The cluster believes the entry is durably on a majority; the follower comes back missing it. Reduce the surviving replicas and that committed entry can vanish — a **hole in the committed log**, the worst outcome in consensus.\n\nSo persistence must complete before the network reply leaves: persist, *then* reply. In the lab this is the difference between passing 2B (no crashes) and silently failing 2C — call `persist()` at the end of every handler that mutated those three fields, before `return`."
+  },
+  {
+    "slug": "iq-raftrep-matchindex-bug",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "On a successful AppendEntries reply, why is `matchIndex[i] = len(rf.log) - 1` a bug, and what's the correct update?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "Students' Guide to Raft (Jon Gjengset, 6.824 TA)",
+    "source_url": "https://thesquareplanet.com/blog/students-guide-to-raft/",
+    "model_answer": "Because **your log can grow while the RPC is in flight.** RPCs run without the lock held, so between sending entries to follower `i` and processing its success reply, clients may have appended new entries to `rf.log`. If you then set `matchIndex[i] = len(rf.log)-1`, you credit follower `i` with entries it was never sent — overstating how much it has replicated. Worse, you might compute a commit majority that includes those phantom replicas and **commit an entry that isn't actually on a majority**, violating safety.\n\nThe correct update is derived from **what you actually sent**: `matchIndex[i] = args.PrevLogIndex + len(args.Entries)` (and `nextIndex[i] = matchIndex[i] + 1`). That's exactly the highest index you know follower `i` now stores, independent of how the leader's log has since changed. The same in-flight-staleness reasoning is why replies must also be applied idempotently — never let `matchIndex` move *backward* from an old, delayed reply; guard the assignment so it only ever advances."
+  },
+  {
+    "slug": "iq-raftrep-fast-backup",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "The naive 'decrement nextIndex by one per failed AppendEntries' is correct but can time out the tests. What goes wrong, and how does the conflict-term optimization fix it?",
+    "companies": "Infra / distributed systems interviews",
+    "source_name": "Students' Guide to Raft (Jon Gjengset, 6.824 TA)",
+    "source_url": "https://thesquareplanet.com/blog/students-guide-to-raft/",
+    "model_answer": "Decrement-by-one needs **one full RPC round-trip per mismatched entry**. If a follower was partitioned and is thousands of entries behind, that's thousands of sequential round-trips before its log catches up — under the harness's timing limits the test times out, even though the logic is correct. It's a performance, not a correctness, failure.\n\nThe optimization lets the leader **skip a whole conflicting term per round-trip.** On a consistency-check failure the follower returns extra hints: the `ConflictTerm` (the term of the entry at the failing `PrevLogIndex`) and `ConflictIndex` (the first index it stored for that term — or its log length if it had no entry there). The leader then jumps `nextIndex` back to the start of that term (or to `ConflictIndex` if it doesn't have the term) instead of stepping back one slot. A follower behind by an entire term resolves in one round-trip instead of hundreds. The Students' Guide stresses: get the naive version correct first, then add this only if 2B times out — the optimization is fiddly and easy to get subtly wrong."
+  }
+]

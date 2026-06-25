@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "iq-feed-design",
+    "kind": "design",
+    "difficulty": "hard",
+    "prompt": "Design a home-timeline news feed (Twitter/Facebook). Compare fan-out on write vs read and defend your choice.",
+    "companies": "Meta, Twitter, LinkedIn",
+    "source_name": "ByteByteGo — News Feed",
+    "source_url": "https://bytebytego.com/courses/system-design-interview/design-the-news-feed-system",
+    "model_answer": "Requirements: post; newest-first feed of followees; read:write ~100:1; eventual consistency OK. **Fan-out-on-write (push)** precomputes each follower's feed → O(1) reads, but a celebrity post is a write storm. **Fan-out-on-read (pull)** merges followees at read time → no write amplification but slow reads. Answer = **hybrid**: push for normal accounts, pull celebrities and merge at read time. Add cursor pagination, a post cache/CDN, and read replicas. Lead with the push/pull trade-off and the celebrity special-case — that's what's being tested."
+  },
+  {
+    "slug": "iq-feed-celebrity",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "A user with 50M followers posts. Pure fan-out-on-write means 50M writes. How do you handle it?",
+    "companies": "Twitter, Meta",
+    "source_name": "System Design Primer",
+    "source_url": "https://github.com/donnemartin/system-design-primer",
+    "model_answer": "Don't fan out mega-accounts. Mark high-follower accounts as 'celebrities'; their posts are **not** pushed to follower feeds. At read time, a user's feed = their precomputed (pushed) feed merged with a **pull** of the few celebrities they follow. This caps the write amplification while keeping normal reads cheap. Threshold tuning (what follower count = celebrity) and the read-time merge are the details; the principle is hybrid push/pull."
+  },
+  {
+    "slug": "iq-feed-ranking-consistency",
+    "kind": "conceptual",
+    "difficulty": "medium",
+    "prompt": "Chronological vs ML-ranked feed, and how consistent does a feed need to be?",
+    "companies": "Meta, feed-systems interviews",
+    "source_name": "ByteByteGo — News Feed",
+    "source_url": "https://bytebytego.com/courses/system-design-interview/design-the-news-feed-system",
+    "model_answer": "Chronological is trivial to cache (a per-user list of recent ids). ML ranking adds a scoring service and per-user, time-sensitive feeds that are harder to precompute/cache — often you rank a candidate set at read time. Consistency: a feed is **eventually consistent** — a post appearing a few seconds late is fine, which is exactly what lets you precompute and cache aggressively. Don't over-engineer strong consistency for a timeline."
+  }
+]

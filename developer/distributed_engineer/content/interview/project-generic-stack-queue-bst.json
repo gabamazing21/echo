@@ -1,0 +1,55 @@
+[
+  {
+    "slug": "iq-generic-stack",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Implement a generic, type-safe stack in Go with Push, Pop() (T, bool), and Len. Why return (T, bool) instead of panicking on empty?",
+    "companies": "Common Go interviews",
+    "source_name": "Learn Go with Tests — Generics",
+    "source_url": "https://quii.gitbook.io/learn-go-with-tests/go-fundamentals/generics",
+    "model_answer": "Back it with a slice (`[]T`); the slice's *end* is the top, so Push/Pop are O(1) amortized. Use `[T any]` for the type parameter.\n\nReturn `(T, bool)` so the caller never mistakes a zero value for real data — the Go idiom for 'might be nothing', sparing a sentinel. Two senior touches: `var zero T` to produce the unknown type's zero on empty, and **zero out the popped slot** (`s.items[last] = zero`) before truncating so the backing array doesn't pin a no-longer-needed pointer (GC hygiene). This matches the app's generic-stack challenge signatures exactly.",
+    "challenge_slug": "generic-stack"
+  },
+  {
+    "slug": "iq-generic-queue-two-stacks",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Implement a FIFO queue using only two stacks. What is the amortized cost of dequeue, and why?",
+    "companies": "Amazon, Microsoft, Bloomberg",
+    "source_name": "NeetCode / LeetCode #232 (Implement Queue using Stacks)",
+    "source_url": "https://leetcode.com/problems/implement-queue-using-stacks/",
+    "model_answer": "Keep an **in** stack and an **out** stack. Enqueue → push to `in`. Dequeue → if `out` is empty, pop everything from `in` into `out` (reversing order), then pop `out`. The double reversal restores FIFO.\n\nEach element is moved between stacks at most twice, so dequeue is **amortized O(1)** even though a single dequeue that triggers a transfer is O(n). This is a great amortized-analysis talking point — and a reminder that 'two stacks make a queue' is a classic composition. Don't transfer on every dequeue; only when `out` is empty.",
+    "challenge_slug": "generic-stack"
+  },
+  {
+    "slug": "iq-generic-valid-parentheses-stack",
+    "kind": "coding",
+    "difficulty": "easy",
+    "prompt": "Use your generic stack to validate a string of brackets '()[]{}'. What does this exercise prove about the stack abstraction?",
+    "companies": "Amazon, Google, Microsoft, Bloomberg",
+    "source_name": "NeetCode 150 / LeetCode #20",
+    "source_url": "https://leetcode.com/problems/valid-parentheses/",
+    "model_answer": "Push openers; on a closer, pop and check it matches the expected opener (mismatch or empty stack → invalid); the stack must be empty at the end. **O(n) time, O(n) space.**\n\nThe lesson for a *project* on generic structures: a well-designed `Stack[T]` is reused unchanged for a brand-new problem — you write the container once, then solve bracket-matching, DFS, and expression parsing on top of it. That reuse, plus a clean `Pop() (T, bool)` contract, is exactly what the generics project is teaching.",
+    "challenge_slug": "valid-parentheses"
+  },
+  {
+    "slug": "iq-generic-iterator-pattern",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "How would you expose iteration over a generic BST without leaking its internal node structure? Compare a channel-based iterator, a callback (visitor), and Go 1.23 range-over-func iterators.",
+    "companies": "Common Go interviews",
+    "source_name": "Go 1.23 range-over-function iterators",
+    "source_url": "https://go.dev/blog/range-functions",
+    "model_answer": "Three idiomatic options:\n1. **Materialize a slice** (`InOrder() []T`) — simplest, but O(n) memory and eager.\n2. **Callback / visitor** (`ForEach(func(T) bool)`) — lazy, zero allocation, return `false` to stop early.\n3. **range-over-func** (Go 1.23+): return an `iter.Seq[T]` so callers write `for v := range tree.All()`. Cleanest modern API; lazy and composable.\n\nA channel-based iterator (`<-chan T`) reads nicely but leaks a goroutine if the consumer stops early — avoid unless you wire up cancellation. The design goal is the same: callers traverse in sorted order **without** touching `*node[T]`, so you can change the internals freely."
+  },
+  {
+    "slug": "iq-generic-thread-safety",
+    "kind": "design",
+    "difficulty": "medium",
+    "prompt": "Your generic stack/queue is used by multiple goroutines and you see data races. How do you make it thread-safe, and what are the trade-offs versus leaving synchronization to the caller?",
+    "companies": "Google, Amazon, Uber",
+    "source_name": "Go sync package documentation",
+    "source_url": "https://pkg.go.dev/sync",
+    "model_answer": "Concurrent `append`/re-slice on the shared backing slice is a **data race** (run `go test -race` to surface it). Simplest fix: embed a `sync.Mutex` and lock in every method. For read-heavy structures, `sync.RWMutex` lets reads run concurrently.\n\nThe deeper trade-off interviewers want: **don't bake locking into a general-purpose container by default.** It adds overhead for single-threaded users and a coarse lock can become a bottleneck. Idiomatic Go often keeps the structure lock-free and lets the *caller* synchronize, or offers a channel as the concurrency primitive ('share memory by communicating'). State the contract explicitly: is this type safe for concurrent use, or not?"
+  }
+]
